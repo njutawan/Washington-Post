@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { SearchIcon, CloseIcon } from './Icons';
+import FocusTrap from './FocusTrap';
 
 export default function SearchBar({ compact = false }: { compact?: boolean }) {
   const [open, setOpen] = useState(false);
@@ -59,11 +60,12 @@ export default function SearchBar({ compact = false }: { compact?: boolean }) {
         <div
           className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center pt-20 px-4"
           onClick={() => setOpen(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Search"
         >
+          <FocusTrap active={open} onClose={() => setOpen(false)}>
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Search"
             className="bg-wp-cream w-full max-w-2xl shadow-2xl border border-wp-black"
             onClick={(e) => e.stopPropagation()}
           >
@@ -116,6 +118,7 @@ export default function SearchBar({ compact = false }: { compact?: boolean }) {
               </p>
             </div>
           </div>
+          </FocusTrap>
         </div>
       )}
     </>

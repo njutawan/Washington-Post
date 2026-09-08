@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 
 /**
  * Skip-to-content link. Visible only when focused (SR + keyboard users).
@@ -10,6 +10,15 @@ import { useCallback } from 'react';
  * the link after the hash jumps).
  */
 export default function SkipLink() {
+  // Ensure the skip target is programmatically focusable from first paint
+  // (tabindex="-1" never enters the Tab order). The click handler below
+  // re-applies it defensively for pages that render their own <main>.
+  useEffect(() => {
+    const main = document.getElementById('main-content');
+    if (main && !main.hasAttribute('tabindex')) {
+      main.setAttribute('tabindex', '-1');
+    }
+  }, []);
   const onClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     const main = document.getElementById('main-content');

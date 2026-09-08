@@ -54,7 +54,7 @@ export default function BottomNav() {
   }
 
   return (
-    <nav className="mobile-bottom-nav" role="navigation" aria-label="Primary">
+    <nav className="mobile-bottom-nav" aria-label="Mobile tabs">
       {TABS.map(({ href, label, Icon, match }) => {
         const active = isActive(href, match);
         return (

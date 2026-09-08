@@ -66,9 +66,9 @@ function LegacyAccountControls() {
       <div className="relative">
         <button
           onClick={() => setAcctOpen((o) => !o)}
-          onBlur={() => setTimeout(() => setAcctOpen(false), 150)}
           aria-label="Account menu"
           aria-expanded={acctOpen}
+          aria-haspopup="menu"
           className="w-10 h-10 flex items-center justify-center hover:bg-wp-light text-wp-black hover:text-wp-red transition tap-target"
         >
           {session.user.image ? (
@@ -81,7 +81,10 @@ function LegacyAccountControls() {
           )}
         </button>
         {acctOpen && (
-          <div className="absolute right-0 top-full mt-1 w-56 bg-white border-2 border-wp-black shadow-lg z-50">
+          <div
+            className="absolute right-0 top-full mt-1 w-56 bg-white border-2 border-wp-black shadow-lg z-50"
+            onKeyDown={(e) => { if (e.key === 'Escape') setAcctOpen(false); }}
+          >
             <div className="px-4 py-3 border-b border-wp-border">
               <p className="font-sans font-bold text-sm truncate">{session.user.name}</p>
               <p className="font-sans text-xs text-wp-gray truncate">{session.user.email}</p>

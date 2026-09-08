@@ -307,7 +307,7 @@ export default function MiniCrossword() {
         moveTo(r - 1, c);
         handleChange(r - 1, c, '');
       }
-    } else if (e.key === 'Tab' || e.key === ' ') {
+    } else if (e.key === ' ') {
       e.preventDefault();
       setDirection((d) => (d === 'across' ? 'down' : 'across'));
     }
@@ -353,7 +353,7 @@ export default function MiniCrossword() {
 
       <div className="grid md:grid-cols-[auto_1fr] gap-6 items-start">
         <div className="inline-block mx-auto md:mx-0 select-none">
-          <div className="grid" style={{ gridTemplateColumns: `repeat(${MINI_SIZE}, 36px)` }}>
+          <div className="grid" style={{ gridTemplateColumns: `repeat(${MINI_SIZE}, 36px)` }} role="group" aria-label="Mini crossword grid. Use arrow keys to move, space to switch direction.">
             {MINI.map((row, r) =>
               row.map((cell, c) => {
                 const selectedHere = selected.r === r && selected.c === c;
@@ -386,7 +386,7 @@ export default function MiniCrossword() {
                         onFocus={() => setSelected({ r, c })}
                         onClick={() => setSelected({ r, c })}
                         className="w-full h-full bg-transparent text-center outline-none uppercase cursor-pointer"
-                        aria-label={`Row ${r + 1}, column ${c + 1}`}
+                        aria-label={cell.number ? `Row ${r + 1}, column ${c + 1}, square ${cell.number}` : `Row ${r + 1}, column ${c + 1}`}
                       />
                     )}
                   </div>
@@ -397,19 +397,19 @@ export default function MiniCrossword() {
           <div className="flex gap-2 mt-4">
             <button
               onClick={onCheck}
-              className="flex-1 bg-wp-black text-white py-2 font-sans font-bold uppercase text-xs tracking-wider hover:bg-wp-red transition"
+              className="flex-1 bg-wp-black text-white py-2 min-h-[44px] font-sans font-bold uppercase text-xs tracking-wider hover:bg-wp-red transition"
             >
               Check
             </button>
             <button
               onClick={onReset}
-              className="flex-1 border border-wp-black py-2 font-sans font-bold uppercase text-xs tracking-wider hover:bg-wp-light transition"
+              className="flex-1 border border-wp-black py-2 min-h-[44px] font-sans font-bold uppercase text-xs tracking-wider hover:bg-wp-light transition"
             >
               Reset
             </button>
           </div>
           {won && (
-            <p className="text-center mt-3 text-sm font-sans font-bold text-wp-green">
+            <p className="text-center mt-3 text-sm font-sans font-bold text-wp-green" role="status">
               🎉 You solved it!
             </p>
           )}

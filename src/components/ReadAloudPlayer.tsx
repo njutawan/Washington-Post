@@ -135,7 +135,7 @@ export default function ReadAloudPlayer({
             {rate}×
           </button>
         </div>
-        <div className="audio-progress" aria-hidden="true">
+        <div className="audio-progress" role="progressbar" aria-label="Reading progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}>
           <div className="audio-progress-fill" style={{ width: `${Math.round(progress * 100)}%` }} />
         </div>
       </div>

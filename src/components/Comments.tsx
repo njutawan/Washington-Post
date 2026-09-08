@@ -75,8 +75,8 @@ function CommentItem({ c }: { c: Comment }) {
             >
               ▲ Recommend ({recs})
             </button>
-            <button className="text-wp-gray hover:text-wp-black py-1">Reply</button>
-            <button className="text-wp-gray hover:text-wp-black py-1">Share</button>
+            <button className="text-wp-gray hover:text-wp-black py-2 px-1 tap-target">Reply</button>
+            <button className="text-wp-gray hover:text-wp-black py-2 px-1 tap-target">Share</button>
           </div>
         </div>
       </div>
@@ -167,6 +167,7 @@ export default function Comments({ articleId }: { articleId: string }) {
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Join the conversation…"
+            aria-label="Write a comment"
             rows={3}
             maxLength={1000}
             className="w-full px-3 py-2 border border-wp-border bg-white font-serif text-base outline-none focus:border-wp-black resize-y"
@@ -181,7 +182,7 @@ export default function Comments({ articleId }: { articleId: string }) {
               {submitting ? 'Posting…' : 'Post comment'}
             </button>
           </div>
-          {error && <p className="text-wp-red text-sm font-sans mt-2">{error}</p>}
+          {error && <p className="text-wp-red text-sm font-sans mt-2" role="alert">{error}</p>}
         </form>
       ) : (
         <div className="mb-8 p-4 border border-wp-border bg-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">

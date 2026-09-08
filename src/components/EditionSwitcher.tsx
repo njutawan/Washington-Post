@@ -52,8 +52,15 @@ export default function EditionSwitcher() {
       const t = e.target as HTMLElement;
       if (!t.closest('[data-edition-switcher]')) setOpen(false);
     };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
     document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
   }, [open]);
 
   const current = EDITIONS.find((e) => e.id === edition) || EDITIONS[0];

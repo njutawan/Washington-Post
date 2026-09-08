@@ -1,12 +1,12 @@
 'use client';
 
 import { topNav, subNav } from '@/lib/data';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import SearchBar from './SearchBar';
 import { MenuIcon, BookmarkIcon } from './Icons';
 import LiveTicker from './LiveTicker';
-import SkipLink from './SkipLink';
 import ThemeToggle from './ThemeToggle';
 import SubscriberMeter from './SubscriberMeter';
 import AuthControls from './AuthControls';
@@ -22,12 +22,23 @@ export default function Masthead() {
     year: 'numeric',
   });
 
+  const pathname = usePathname();
+  const isHome = pathname === '/';
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = () => setMenuOpen(false);
 
+  // Escape closes the mobile drawer; focus stays on the menu button.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [menuOpen]);
+
   return (
     <>
-      <SkipLink />
       <BreakingBanner />
       <header className="bg-wp-cream sticky top-0 z-40 shadow-sm" role="banner" style={{ paddingTop: 'var(--sat)' }}>
       {/* Breaking / live ticker — runs ACROSS THE TOP above everything, like WaPo's real red live bar */}
@@ -41,6 +52,7 @@ export default function Masthead() {
               className="md:hidden flex items-center justify-center w-10 h-10 -ml-2 font-bold uppercase tracking-wider text-wp-black tap-target"
               aria-label={menuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={menuOpen}
+              aria-controls="mobile-menu"
             >
               <MenuIcon className="w-5 h-5" />
             </button>
@@ -79,9 +91,15 @@ export default function Masthead() {
           Democracy Dies in Darkness
         </div>
         <Link href="/" className="inline-block" onClick={closeMenu}>
-          <h1 className="masthead-title fluid-display tracking-tightest hover:text-wp-ink">
-            The Washington Post
-          </h1>
+          {isHome ? (
+            <h1 className="masthead-title fluid-display tracking-tightest hover:text-wp-ink">
+              The Washington Post
+            </h1>
+          ) : (
+            <span className="masthead-title fluid-display tracking-tightest hover:text-wp-ink">
+              The Washington Post
+            </span>
+          )}
         </Link>
         <div className="flex justify-center items-center gap-4 mt-3 md:mt-4">
           <div className="hidden md:block h-px flex-1 bg-wp-border" />
@@ -93,7 +111,7 @@ export default function Masthead() {
       </div>
 
       {/* Primary nav: horizontal scroll on mobile/tablet, centered on desktop */}
-      <nav className="border-t-2 border-b border-wp-black bg-wp-cream">
+      <nav aria-label="Primary sections" className="border-t-2 border-b border-wp-black bg-wp-cream">
         <div className="wp-container relative scroll-fade">
           <ul className="flex items-center gap-4 md:gap-5 py-2 overflow-x-auto no-scrollbar -mx-1 px-1 md:mx-0 md:px-0 md:justify-center md:overflow-visible">
             {topNav.map((item) => (
@@ -113,7 +131,7 @@ export default function Masthead() {
       </nav>
 
       {/* Secondary nav: visible & scrollable on tablet+, compact chips on mobile */}
-      <nav className="border-b border-wp-border bg-white/40">
+      <nav aria-label="More sections" className="border-b border-wp-border bg-white/40">
         <div className="wp-container relative scroll-fade">
           <ul className="flex items-center gap-4 md:gap-6 py-1.5 overflow-x-auto no-scrollbar -mx-1 px-1 md:mx-0 md:px-0 md:justify-center md:overflow-visible text-[11px] md:text-[12px]">
             {subNav.map((item) => (
@@ -129,7 +147,7 @@ export default function Masthead() {
 
       {/* Mobile drawer menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-wp-border bg-white">
+        <nav id="mobile-menu" aria-label="Mobile" className="md:hidden border-t border-wp-border bg-white">
           <ul className="px-4 py-2 pb-6">
             {[...topNav, ...subNav].map((item) => (
               <li key={item.slug} className="border-b border-wp-border">
@@ -155,7 +173,7 @@ export default function Masthead() {
               </Link>
             </li>
           </ul>
-        </div>
+        </nav>
       )}
 
       </header>

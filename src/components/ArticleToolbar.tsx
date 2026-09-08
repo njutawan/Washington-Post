@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import BookmarkButton from './BookmarkButton';
 import ShareSheet from './ShareSheet';
 import type { Article } from '@/lib/data';
@@ -59,14 +60,14 @@ export default function ArticleToolbar({ article, audio }: Props) {
             Text {textSize === 'sm' ? 'A' : textSize === 'md' ? 'A' : 'A'}
             <sub>{textSize === 'sm' ? '-' : textSize === 'lg' ? '+' : ''}</sub>
           </button>
-          <a
-            href="#"
+          <Link
+            href="/subscribe"
             className="px-2 py-2 text-wp-gray hover:text-wp-black tap-target"
             aria-label="Gift this article"
             title="Gift article"
           >
             Gift
-          </a>
+          </Link>
           <BookmarkButton slug={article.slug} />
           <ShareSheet url={`/article/${article.slug}`} title={article.title} text={article.dek} />
         </div>

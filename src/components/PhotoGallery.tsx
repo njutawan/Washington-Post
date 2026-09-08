@@ -26,7 +26,7 @@ export default function PhotoGallery({ photos, title }: { photos: Photo[]; title
             key={i}
             onClick={() => openAt(i)}
             className={
-              'group relative overflow-hidden bg-gray-200 focus:outline-none ' +
+              'group relative overflow-hidden bg-gray-200 ' +
               (i === 0 ? 'col-span-2 row-span-2' : '')
             }
             aria-label={`Open photo ${i + 1}: ${p.caption || ''}`}

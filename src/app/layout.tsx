@@ -17,6 +17,7 @@ import PodcastMiniPlayer from '@/components/PodcastMiniPlayer';
 import BottomNav from '@/components/BottomNav';
 import GateInterceptor from '@/components/GateInterceptor';
 import Toaster from '@/components/Toaster';
+import SkipLink from '@/components/SkipLink';
 // Font CSS variables (--font-sans / --font-serif / --font-display) are
 // declared in :root in globals.css, so we don't need a class here.
 
@@ -65,6 +66,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="alternate" type="application/rss+xml" title="The Washington Post — RSS Feed" href="/api/feed" />
       </head>
       <body className="antialiased pt-1 pb-16 md:pb-14">
+        <SkipLink />
         {/* ClerkProvider must live INSIDE <body>, not wrap <html> — Clerk mounts
             its client SDK against the app tree, and wrapping the document element
             breaks hydration of <head>-level metadata. */}
