@@ -1,4 +1,5 @@
 import NewsletterSignup from './NewsletterSignup';
+import { TwitterIcon, FacebookIcon, InstagramIcon, YoutubeIcon } from './Icons';
 
 const footerSections = [
   {
@@ -89,9 +90,21 @@ export default function Footer() {
             <a href="#" className="hover:text-white">Cookies</a>
             <a href="#" className="hover:text-white">Accessibility</a>
             <span className="hidden md:inline text-gray-600">|</span>
-            <div className="flex gap-3">
-              {['Twitter', 'Facebook', 'Instagram', 'YouTube'].map((s) => (
-                <a key={s} href="#" className="hover:text-white" aria-label={s}>{s[0]}</a>
+            <div className="flex gap-2">
+              {[
+                { label: 'Twitter', Icon: TwitterIcon },
+                { label: 'Facebook', Icon: FacebookIcon },
+                { label: 'Instagram', Icon: InstagramIcon },
+                { label: 'YouTube', Icon: YoutubeIcon },
+              ].map(({ label, Icon }) => (
+                <a
+                  key={label}
+                  href="#"
+                  aria-label={label}
+                  className="w-11 h-11 md:w-9 md:h-9 inline-flex items-center justify-center border border-gray-700 text-gray-300 hover:text-white hover:border-white transition"
+                >
+                  <Icon className="w-4 h-4" />
+                </a>
               ))}
             </div>
           </div>

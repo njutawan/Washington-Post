@@ -37,7 +37,7 @@ export default function HomepageOpinions() {
         </div>
         <Link
           href="/opinions"
-          className="text-xs font-sans uppercase tracking-wider text-wp-link hover:underline"
+          className="text-xs font-sans uppercase tracking-wider text-wp-link hover:underline min-h-[44px] inline-flex items-center"
         >
           See all Opinions →
         </Link>
@@ -53,7 +53,7 @@ export default function HomepageOpinions() {
             <article key={op.id} className="text-center">
               <Link
                 href={slug ? `/author/${slug}` : `/article/${op.slug}`}
-                className="block mx-auto w-28 h-28 md:w-32 md:h-32 relative mb-3 group"
+                className="block mx-auto w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 relative mb-3 group"
                 aria-label={`${displayName} — ${op.title}`}
               >
                 {avatar ? (
@@ -62,7 +62,7 @@ export default function HomepageOpinions() {
                       src={avatar}
                       alt={displayName}
                       fill
-                      sizes="(max-width: 768px) 112px, 128px"
+                      sizes="(max-width: 640px) 80px, (max-width: 768px) 112px, 128px"
                       className="object-cover group-hover:opacity-95 transition"
                     />
                   </div>

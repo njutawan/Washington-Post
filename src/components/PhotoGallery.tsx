@@ -15,7 +15,7 @@ export default function PhotoGallery({ photos, title }: { photos: Photo[]; title
     <section className="mt-12 border-t-2 border-wp-black pt-6">
       <div className="flex items-baseline justify-between mb-6">
         <h2 className="headline text-2xl md:text-3xl">{title || 'In Focus'}</h2>
-        <a href="#full-gallery" className="text-xs font-sans uppercase tracking-wider text-wp-link hover:underline">
+        <a href="#full-gallery" className="text-xs font-sans uppercase tracking-wider text-wp-link hover:underline min-h-[44px] inline-flex items-center">
           See the full essay →
         </a>
       </div>

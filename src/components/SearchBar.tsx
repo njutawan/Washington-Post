@@ -47,8 +47,8 @@ export default function SearchBar({ compact = false }: { compact?: boolean }) {
         aria-label="Search"
         className={
           compact
-            ? 'p-2 hover:bg-wp-light text-wp-black hover:text-wp-red transition'
-            : 'flex items-center gap-2 p-2 hover:bg-wp-light text-wp-black hover:text-wp-red transition'
+            ? 'p-2 hover:bg-wp-light text-wp-black hover:text-wp-red transition min-w-[44px] min-h-[44px] inline-flex items-center justify-center'
+            : 'flex items-center gap-2 p-2 hover:bg-wp-light text-wp-black hover:text-wp-red transition min-w-[44px] min-h-[44px] inline-flex items-center justify-center'
         }
       >
         <SearchIcon className="w-[18px] h-[18px]" />

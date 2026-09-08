@@ -39,7 +39,7 @@ export default function ClipsGrid({
         </div>
         <Link
           href={href}
-          className="text-xs font-sans uppercase tracking-wider text-wp-link hover:underline whitespace-nowrap ml-4"
+          className="text-xs font-sans uppercase tracking-wider text-wp-link hover:underline whitespace-nowrap ml-4 min-h-[44px] inline-flex items-center"
         >
           All video →
         </Link>

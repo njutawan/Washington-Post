@@ -59,21 +59,21 @@ export default function TheSeven() {
             <button
               onClick={() => go(active - 1)}
               aria-label="Previous story"
-              className="w-8 h-8 border border-wp-border hover:bg-wp-black hover:text-white flex items-center justify-center"
+              className="w-11 h-11 border border-wp-border hover:bg-wp-black hover:text-white flex items-center justify-center"
             >
               <ChevronRightIcon className="w-4 h-4 rotate-180" />
             </button>
             <button
               onClick={() => go(active + 1)}
               aria-label="Next story"
-              className="w-8 h-8 border border-wp-border hover:bg-wp-black hover:text-white flex items-center justify-center"
+              className="w-11 h-11 border border-wp-border hover:bg-wp-black hover:text-white flex items-center justify-center"
             >
               <ChevronRightIcon className="w-4 h-4" />
             </button>
             <button
               onClick={() => setPaused((p) => !p)}
               aria-label={paused ? 'Resume autoplay' : 'Pause autoplay'}
-              className="w-8 h-8 border border-wp-border hover:bg-wp-black hover:text-white flex items-center justify-center text-xs font-sans"
+              className="w-11 h-11 border border-wp-border hover:bg-wp-black hover:text-white flex items-center justify-center text-xs font-sans"
               title={paused ? 'Resume' : 'Pause'}
             >
               {paused ? '▶' : '❚❚'}

@@ -47,9 +47,9 @@ export default function Home() {
 
       <main id="main-content" className="wp-container py-4 md:py-6">
         {/* ============ TOP BLOCK: LEAD (text left, image right) + right rail ============ */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 pb-6 md:pb-8 border-b-2 border-wp-black">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 pb-6 md:pb-8 border-b-2 border-wp-black">
           {/* Lead + secondary two-up */}
-          <div className="lg:col-span-9">
+          <div className="md:col-span-8 lg:col-span-9">
             <LeadSplit article={leadStory} />
 
             <div className="mt-4 flex items-center gap-3 text-xs font-sans text-wp-gray flex-wrap border-t border-wp-border pt-3">
@@ -75,7 +75,7 @@ export default function Home() {
           </div>
 
           {/* Right rail: top stories list + live link */}
-          <aside className="lg:col-span-3 lg:border-l lg:border-wp-border lg:pl-6">
+          <aside className="md:col-span-4 lg:col-span-3 md:border-l md:border-wp-border md:pl-6">
             <h2 className="kicker text-wp-black text-sm uppercase tracking-[0.15em] mb-3 border-b border-wp-border pb-2">
               Top Stories
             </h2>
