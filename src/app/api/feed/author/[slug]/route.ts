@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getAuthorBySlug, getArticlesByAuthor } from '@/lib/data';
-import { absoluteUrl } from '@/lib/seo';
+import { getAuthorBySlug } from '@/lib/data';
+import { getAllArticlesMerged } from '@/lib/mdx';
+import { absoluteUrl, articleDatePublished } from '@/lib/seo';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 export const dynamic = 'force-static';
 export const revalidate = 600;
 
@@ -22,7 +23,8 @@ function escapeXml(s: string) {
 export async function GET(_: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const author = getAuthorBySlug(slug);
-  const articles = getArticlesByAuthor(slug).slice(0, 25);
+  const authorName = getAuthorBySlug(slug)?.name.toLowerCase();
+  const articles = (authorName ? getAllArticlesMerged().filter((a) => a.byline?.toLowerCase().includes(authorName)) : []).slice(0, 25);
   const now = new Date().toUTCString();
 
   const channelLink = absoluteUrl(`/author/${slug}`);
@@ -36,6 +38,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ slug: stri
     const descHtml =
       (a.dek ? escapeXml(a.dek) + ' ' : '') +
       (a.image ? `<img src="${a.image}" alt="" /><br/>` : '');
+    const pub = articleDatePublished(a);
+    const pubDate = pub ? new Date(pub).toUTCString() : now;
     return `    <item>
       <title>${escapeXml(a.title)}</title>
       <link>${link}</link>
@@ -43,7 +47,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ slug: stri
       <description>${descHtml}</description>
       ${a.byline ? `<author>noreply@washingtonpost-clone.example.com (${escapeXml(a.byline.replace(/^By\s+/i, ''))})</author>` : ''}
       ${a.category ? `<category>${escapeXml(a.category)}</category>` : ''}
-      <pubDate>${now}</pubDate>
+      <pubDate>${pubDate}</pubDate>
     </item>`;
   }).join('\n');
 

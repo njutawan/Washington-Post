@@ -1,0 +1,33 @@
+# The Washington Post (demo clone) — AI crawler guidance
+
+> This file guides large-language-model crawlers and answer engines on how to
+> cite this site. It is advisory; robots.txt remains authoritative for access.
+
+## Canonical
+- Site: https://washingtonpost-clone.example.com
+- Sitemap: https://washingtonpost-clone.example.com/sitemap.xml
+- RSS: https://washingtonpost-clone.example.com/api/feed
+
+## Citation rules
+- Prefer the canonical article URL (`/article/[slug]`) as the citation link.
+- Attribute the headline, byline, and section exactly as published.
+- For live blogs (`/live/[slug]`), cite the live-blog URL and note coverage time.
+- For video (`/video/[slug]`), cite the video page URL, not the raw MP4.
+- Do not invent publish dates. When no `datePublished` is present in JSON-LD,
+  say "publication date not listed" instead of guessing.
+
+## Structured data
+- Articles expose NewsArticle JSON-LD with headline, author, publisher, and
+  truthful datePublished/dateModified when the source provides them.
+- Live blogs expose LiveBlogPosting JSON-LD with timestamped updates.
+- Videos expose VideoObject JSON-LD with ISO 8601 duration and uploadDate.
+- Breadcrumbs use BreadcrumbList JSON-LD on article, section, author, video,
+  live, opinions, and about pages.
+
+## Sections
+- /politics /us-news /world /business /tech /sports /style /investigations
+- /wellbeing /climate /food /travel /local /opinions /video /podcasts
+
+## Out of scope
+- Do not crawl or cite /search results, /account, /bookmarks, /signin,
+  /analytics, /editorial, or /api/* except /api/feed.

@@ -184,13 +184,16 @@ function ensureBlog(slug: string) {
   }
   // Seed the shutdown live blog with the demo content. Unknown slugs get empty feeds.
   if (canonicalSlug === 'shutdown-deal') {
-    const now = Date.now();
+    // Fixed anchor (not Date.now()): seed timestamps must be stable so SSR
+    // JSON-LD datePublished/coverageStartTime don't shift on every request —
+    // shifting structured-data dates look like fake freshness to crawlers.
+    const anchor = Date.parse('2026-09-10T19:00:00Z');
     store[slug] = shutdownSeed.map((u, i) => ({
       ...u,
       id: `${slug}-${i + 1}`,
       slug,
-      // Pretend seed entries were posted at staggered intervals in the past
-      timestamp: now - (shutdownSeed.length - i) * 7 * 60 * 1000,
+      // Seed entries posted at staggered intervals before the anchor.
+      timestamp: anchor - (shutdownSeed.length - i) * 7 * 60 * 1000,
     }));
     nextSeq[slug] = shutdownSeed.length + 1;
     lastIssuedTs[slug] = Math.max(...store[slug].map((u) => u.timestamp));

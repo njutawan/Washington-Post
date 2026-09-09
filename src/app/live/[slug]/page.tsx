@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
-import { getLiveUpdates, KNOWN_LIVE_BLOGS } from '@/lib/liveData';
+import { getLiveUpdates, KNOWN_LIVE_BLOGS, LIVE_BLOG_CANONICAL_SLUGS } from '@/lib/liveData';
 import LiveBlogPageClient from './LiveBlogClient';
-import { breadcrumbJsonLd } from '@/lib/seo';
+import { absoluteUrl, breadcrumbJsonLd, liveBlogJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,10 +15,26 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const meta = KNOWN_LIVE_BLOGS[slug];
   if (!meta) return { title: 'Live updates' };
+  const canonicalSlug = (LIVE_BLOG_CANONICAL_SLUGS as string[]).includes(slug)
+    ? slug
+    : 'shutdown-deal';
+  const url = absoluteUrl(`/live/${canonicalSlug}`);
   return {
     title: `LIVE: ${meta.title}`,
     description: meta.dek,
-    openGraph: { title: `LIVE: ${meta.title}`, description: meta.dek },
+    alternates: { canonical: `/live/${canonicalSlug}` },
+    openGraph: {
+      type: 'article',
+      url,
+      title: `LIVE: ${meta.title}`,
+      description: meta.dek,
+      siteName: 'The Washington Post',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `LIVE: ${meta.title}`,
+      description: meta.dek,
+    },
   };
 }
 
@@ -28,6 +44,9 @@ export default async function LiveBlogPage({ params }: Props) {
   if (!meta) notFound();
 
   const initialUpdates = getLiveUpdates(slug);
+  const canonicalSlug = (LIVE_BLOG_CANONICAL_SLUGS as string[]).includes(slug)
+    ? slug
+    : 'shutdown-deal';
 
   return (
     <>
@@ -40,6 +59,19 @@ export default async function LiveBlogPage({ params }: Props) {
               { name: 'Politics', item: '/politics' },
               { name: 'Live Updates' },
             ]),
+          ),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            liveBlogJsonLd({
+              slug: canonicalSlug,
+              title: meta.title,
+              dek: meta.dek,
+              updates: initialUpdates,
+            }),
           ),
         }}
       />

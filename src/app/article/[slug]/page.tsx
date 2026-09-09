@@ -14,7 +14,7 @@ import TOCWithRef from '@/components/TOCWithRef';
 import MDXBody from '@/components/MDXBody';
 import ElectionWidget from '@/components/ElectionWidget';
 import { getArticleBySlug, getRelatedArticles } from '@/lib/data';
-import { articleMetadata, articleJsonLd, breadcrumbJsonLd } from '@/lib/seo';
+import { articleMetadata, articleJsonLd, breadcrumbJsonLd, articleDatePublished } from '@/lib/seo';
 import { ClockIcon } from '@/components/Icons';
 import Comments from '@/components/Comments';
 import PaywallGate from '@/components/PaywallGate';
@@ -205,7 +205,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
                 <div className="byline flex items-center flex-wrap gap-3 mt-1">
                   {article.dateline && <span className="uppercase tracking-wider font-bold text-wp-black text-xs">{article.dateline}</span>}
                   <span className="flex items-center gap-1">
-                    <ClockIcon /> {article.time || 'Recently'}
+                    <ClockIcon /> {(() => { const iso = articleDatePublished(articleForClient); return iso ? new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : (article.time || 'Recently'); })()}
                   </span>
                   {article.readTime && (
                     <span className="flex items-center gap-1">

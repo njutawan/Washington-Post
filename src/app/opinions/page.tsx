@@ -8,6 +8,20 @@ import NewsletterSignup from '@/components/NewsletterSignup';
 import Sidebar from '@/components/Sidebar';
 import EditorialCartoon from '@/components/EditorialCartoon';
 import { breadcrumbJsonLd } from '@/lib/seo';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Opinions',
+  description:
+    'Editorials, columns, op-eds, letters, and guest opinions from The Washington Post.',
+  alternates: { canonical: '/opinions' },
+  openGraph: {
+    type: 'website',
+    title: 'Opinions - The Washington Post',
+    description: 'Editorials, columns, op-eds, and guest opinions.',
+    siteName: 'The Washington Post',
+  },
+};
 
 export default function OpinionsPage() {
   const lead = opinions[0];

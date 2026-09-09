@@ -54,6 +54,7 @@ const ARTICLE_PROJECTION = `{
   readTime,
   live,
   "publishedAt": _createdAt,
+  "updatedAt": _updatedAt,
   pullQuote
 }`;
 
@@ -111,6 +112,7 @@ function normalizeArticle(d: Record<string, unknown>): Article {
     live: Boolean(d.live),
     pullQuote: d.pullQuote ? String(d.pullQuote) : undefined,
     body: Array.isArray(d.body) ? (d.body as string[]) : undefined,
-    // The following fields aren't yet modeled in Sanity and fall back to defaults.
+    publishedAt: d.publishedAt ? String(d.publishedAt) : undefined,
+    updatedAt: d.updatedAt ? String(d.updatedAt) : undefined,
   } as Article;
 }

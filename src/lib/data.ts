@@ -20,6 +20,11 @@ export type Article = {
   opinion?: boolean;
   authorTitle?: string;
   wordCount?: number;
+  /** ISO date string (YYYY-MM-DD or full ISO). Sourced from MDX frontmatter
+   *  `publishedAt` or CMS `_createdAt`. Used for SEO dates — never fake it. */
+  publishedAt?: string;
+  /** Human-friendly update label ("6:42 p.m. ET") or ISO string. */
+  updatedAt?: string;
 };
 
 /** When an article body is MDX-sourced, Content is the React component to render. */
@@ -133,7 +138,7 @@ export const topStories: Article[] = [
 ];
 
 export const theSeven: Article[] = [
-  { id: 's1', slug: 'mamdani-nyc-mayor-poll', title: 'NYC voters give Mamdani high marks, say mayor is doing better than expected', byline: 'Erin Cox', time: '42 minutes ago', live: true },
+  { id: 's1', slug: 'mamdani-nyc-mayor-poll', title: 'NYC voters give Mamdani high marks, say mayor is doing better than expected', byline: 'Erin Cox', time: '42 minutes ago', live: true, publishedAt: '2026-09-10' },
   { id: 's2', slug: 'canada-tariffs-rebuke', title: "Canada's countertariffs kick in, drawing political rebuke from Trump", byline: 'Riley Beggin', time: '1 hour ago' },
   { id: 's3', slug: 'extra-steps-heart-health', title: 'Walking an extra 1,000 steps a day may help your heart, study finds', byline: 'Gretchen Reynolds', time: '5 hours ago' },
   { id: 's4', slug: 'eiffel-tower-hindu-group', title: "Paris in uproar after Eiffel Tower restricts female staff for Hindu group's visit", byline: 'Victoria Craw', time: '4 hours ago' },

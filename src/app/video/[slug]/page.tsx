@@ -6,7 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import { ArticleCard } from '@/components/ArticleCard';
 import { getVideoBySlug, getAllVideos } from '@/lib/videoData';
 import { getArticleBySlug } from '@/lib/data';
-import { videoMetadata } from '@/lib/seo';
+import { videoMetadata, videoJsonLd, breadcrumbJsonLd } from '@/lib/seo';
 import { notFound } from 'next/navigation';
 
 type Params = { slug: string };
@@ -24,6 +24,9 @@ export async function generateMetadata({ params }: { params: Promise<Params> }) 
     description: video.description,
     slug: video.slug,
     thumbnail: video.thumbnail,
+    contentUrl: video.src,
+    duration: video.duration,
+    publishedAt: video.publishedAt,
   });
 }
 
@@ -41,6 +44,35 @@ export default async function VideoPage({ params }: { params: Promise<Params> })
   return (
     <div className="min-h-screen bg-wp-cream">
       <Masthead />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            videoJsonLd({
+              title: video.title,
+              description: video.description,
+              slug: video.slug,
+              thumbnail: video.thumbnail,
+              contentUrl: video.src,
+              duration: video.duration,
+              publishedAt: video.publishedAt,
+              byline: video.byline,
+            }),
+          ),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            breadcrumbJsonLd([
+              { name: 'Home', item: '/' },
+              { name: 'Video', item: '/video' },
+              { name: video.title },
+            ]),
+          ),
+        }}
+      />
       <main id="main-content" className="wp-container py-4 md:py-6">
         <nav aria-label="Breadcrumb" className="text-xs font-sans text-wp-gray mb-3">
           <Link href="/" className="hover:text-wp-link hover:underline">Home</Link>

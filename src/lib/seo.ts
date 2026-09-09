@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getAllArticles, type Article, type Author } from './data';
+import { getAllArticles, parseBylineNames, type Article, type Author } from './data';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://washingtonpost-clone.example.com';
 const SITE_NAME = 'The Washington Post';
@@ -7,6 +7,33 @@ const DEFAULT_OG_IMAGE = '/favicon.png';
 
 export function absoluteUrl(path: string) {
   return `${SITE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
+export function siteUrl() {
+  return SITE_URL;
+}
+
+/**
+ * Resolve a truthful ISO publish date for an article.
+ * Never fabricates "now" — returns undefined when the source has no date,
+ * so crawlers/AI don't ingest fake freshness signals.
+ */
+export function articleDatePublished(article: Article): string | undefined {
+  const raw = article.publishedAt;
+  if (!raw) return undefined;
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+}
+
+/** Resolve a truthful ISO modified date (frontmatter `updatedAt` may be a
+ *  human label like "6:42 p.m. ET" — those are ignored, not faked). */
+export function articleDateModified(article: Article): string | undefined {
+  const raw = article.updatedAt;
+  if (raw) {
+    const d = new Date(raw);
+    if (!Number.isNaN(d.getTime())) return d.toISOString();
+  }
+  return articleDatePublished(article);
 }
 
 export function siteMetadata(): Metadata {
@@ -61,11 +88,30 @@ export function siteMetadata(): Metadata {
   };
 }
 
+/** Convert a "m:ss" / "h:mm:ss" duration label to ISO 8601 (PT4M32S). */
+export function toIsoDuration(label?: string): string | undefined {
+  if (!label) return undefined;
+  const parts = label.trim().split(':').map((p) => parseInt(p, 10));
+  if (parts.some((n) => Number.isNaN(n))) return undefined;
+  let h = 0, m = 0, s = 0;
+  if (parts.length === 3) [h, m, s] = parts;
+  else if (parts.length === 2) [m, s] = parts;
+  else if (parts.length === 1) [s] = parts;
+  else return undefined;
+  return `PT${h > 0 ? `${h}H` : ''}${m > 0 ? `${m}M` : ''}${s}S`;
+}
+
 export function videoMetadata(
-  video: { title: string; description?: string; slug: string; thumbnail?: string; duration?: number }
+  video: { title: string; description?: string; slug: string; thumbnail?: string; contentUrl?: string; duration?: string; publishedAt?: string }
 ): Metadata {
   const url = absoluteUrl(`/video/${video.slug}`);
   const image = video.thumbnail || DEFAULT_OG_IMAGE;
+  const videos = video.contentUrl ? [{
+    url: video.contentUrl,
+    width: 1280,
+    height: 720,
+    type: 'video/mp4',
+  }] : undefined;
   return {
     title: video.title,
     description: video.description,
@@ -77,25 +123,73 @@ export function videoMetadata(
       description: video.description,
       images: [{ url: image, width: 1280, height: 720, alt: video.title }],
       siteName: SITE_NAME,
-      videos: [{
-        url,
-        width: 1280,
-        height: 720,
-        type: 'video/mp4',
-      }],
+      videos,
     },
     twitter: {
-      card: 'player',
+      card: 'summary_large_image',
       title: video.title,
       description: video.description,
       images: [image],
-      players: [{
-        playerUrl: url,
-        streamUrl: url,
-        width: 1280,
-        height: 720,
-      }],
     },
+  };
+}
+
+export function videoJsonLd(video: {
+  title: string; description?: string; slug: string; thumbnail?: string;
+  contentUrl?: string; duration?: string; publishedAt?: string; byline?: string;
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: video.title,
+    description: video.description,
+    thumbnailUrl: video.thumbnail ? [video.thumbnail] : undefined,
+    contentUrl: video.contentUrl,
+    embedUrl: absoluteUrl(`/video/${video.slug}`),
+    duration: toIsoDuration(video.duration),
+    uploadDate: video.publishedAt,
+    author: video.byline ? { '@type': 'Person', name: video.byline } : undefined,
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      logo: { '@type': 'ImageObject', url: absoluteUrl('/favicon.png') },
+    },
+    inLanguage: 'en-US',
+  };
+}
+
+export function liveBlogJsonLd(blog: {
+  slug: string; title: string; dek?: string;
+  updates: { title: string; body: string; timestamp: number }[];
+}) {
+  const url = absoluteUrl(`/live/${blog.slug}`);
+  const updates = blog.updates.slice(0, 20);
+  const first = updates[updates.length - 1];
+  const last = updates[0];
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'LiveBlogPosting',
+    headline: blog.title,
+    description: blog.dek,
+    url,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    inLanguage: 'en-US',
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      logo: { '@type': 'ImageObject', url: absoluteUrl('/favicon.png') },
+    },
+    coverageStartTime: first ? new Date(first.timestamp).toISOString() : undefined,
+    coverageEndTime: undefined,
+    liveBlogUpdate: updates.map((u, i) => ({
+      '@type': 'BlogPosting',
+      headline: u.title,
+      articleBody: u.body,
+      datePublished: new Date(u.timestamp).toISOString(),
+      url: `${url}#update-${updates.length - i}`,
+      position: i + 1,
+    })),
+    dateModified: last ? new Date(last.timestamp).toISOString() : undefined,
   };
 }
 
@@ -108,9 +202,16 @@ export function articleMetadata(article: Article, authorList: Author[] = []): Me
     article.category, article.kicker, article.categorySlug,
     'breaking news', 'Washington Post',
   ].filter(Boolean) as string[]));
-  // Build author profile URLs array for OG article:author (must be URLs, not strings)
   const authorUrls = authorList
     .map((a) => absoluteUrl(`/author/${a.slug}`));
+  const publishedTime = articleDatePublished(article);
+  const modifiedTime = articleDateModified(article);
+  const other: Record<string, string> = {
+    'news_keywords': tags.slice(0, 10).join(','),
+    'article:section': article.category || '',
+  };
+  if (publishedTime) other['article:published_time'] = publishedTime;
+  if (modifiedTime) other['article:modified_time'] = modifiedTime;
   return {
     title: headline,
     description,
@@ -121,8 +222,8 @@ export function articleMetadata(article: Article, authorList: Author[] = []): Me
       url,
       title: headline,
       description,
-      publishedTime: article.time ? undefined : new Date().toISOString(),
-      modifiedTime: new Date().toISOString(),
+      publishedTime,
+      modifiedTime,
       section: article.category,
       tags: tags,
       authors: authorUrls.length > 0 ? authorUrls : undefined,
@@ -135,12 +236,7 @@ export function articleMetadata(article: Article, authorList: Author[] = []): Me
       description,
       images: [image],
     },
-    other: {
-      'news_keywords': tags.slice(0, 10).join(','),
-      'article:published_time': new Date().toISOString(),
-      'article:section': article.category || '',
-      'amphtml': absoluteUrl(`/article/${article.slug}?amp=1`),
-    },
+    other,
   };
 }
 
@@ -194,21 +290,19 @@ export function authorMetadata(author: Author, articleCount: number): Metadata {
 }
 
 export function articleJsonLd(article: Article) {
+  const datePublished = articleDatePublished(article);
+  const dateModified = articleDateModified(article);
+  const names = parseBylineNames(article.byline);
   return {
     '@context': 'https://schema.org',
     '@type': 'NewsArticle',
     headline: article.title,
     description: article.dek,
     image: article.image ? [article.image] : undefined,
-    datePublished: new Date().toISOString(),
-    dateModified: new Date().toISOString(),
-    author: article.byline
-      ? [
-          {
-            '@type': 'Person',
-            name: article.byline.replace(/^By\s+/, '').split(' and ')[0],
-          },
-        ]
+    datePublished,
+    dateModified,
+    author: names.length > 0
+      ? names.map((name) => ({ '@type': 'Person', name }))
       : undefined,
     publisher: {
       '@type': 'Organization',

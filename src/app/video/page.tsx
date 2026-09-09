@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Masthead from '@/components/Masthead';
 import Footer from '@/components/Footer';
 import { getAllVideos } from '@/lib/videoData';
-import { siteMetadata } from '@/lib/seo';
+import { absoluteUrl } from '@/lib/seo';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/video' },
   openGraph: {
     type: 'website',
-    url: 'https://washingtonpost-clone.example.com/video',
+    url: absoluteUrl('/video'),
     title: 'Video - The Washington Post',
     description: 'Watch the latest news video, original reporting and documentary shorts from The Washington Post.',
     siteName: 'The Washington Post',

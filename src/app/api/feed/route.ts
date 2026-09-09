@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getAllArticles } from '@/lib/data';
-import { absoluteUrl } from '@/lib/seo';
+import { getAllArticlesMerged } from '@/lib/mdx';
+import { absoluteUrl, articleDatePublished } from '@/lib/seo';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 export const dynamic = 'force-static';
 export const revalidate = 600;
 
@@ -20,7 +20,8 @@ function escapeXml(s: string) {
 }
 
 export async function GET() {
-  const articles = getAllArticles().slice(0, 30);
+  // Direct MDX merge — see note in sitemap.ts about the eval-require fallback.
+  const articles = getAllArticlesMerged().slice(0, 30);
   const now = new Date().toUTCString();
 
   const items = articles.map((a) => {
@@ -31,6 +32,8 @@ export async function GET() {
     // (trusted), not user input.
     const text = escapeXml(a.dek || '');
     const desc = (text ? `${text} ` : '') + (a.image ? `<img src="${a.image}" alt="" /><br/>` : '');
+    const pub = articleDatePublished(a);
+    const pubDate = pub ? new Date(pub).toUTCString() : now;
     return `    <item>
       <title>${escapeXml(a.title)}</title>
       <link>${link}</link>
@@ -38,7 +41,7 @@ export async function GET() {
       <description>${desc}</description>
       ${a.byline ? `<author>noreply@washingtonpost-clone.example.com (${escapeXml(a.byline.replace(/^By\s+/, ''))})</author>` : ''}
       ${a.category ? `<category>${escapeXml(a.category)}</category>` : ''}
-      <pubDate>${now}</pubDate>
+      <pubDate>${pubDate}</pubDate>
     </item>`;
   }).join('\n');
 

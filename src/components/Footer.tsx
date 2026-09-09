@@ -1,26 +1,76 @@
+import Link from 'next/link';
 import NewsletterSignup from './NewsletterSignup';
 import { TwitterIcon, FacebookIcon, InstagramIcon, YoutubeIcon } from './Icons';
 
 const footerSections = [
   {
     title: 'News',
-    items: ['Politics', 'U.S. News', 'World', 'Investigations', 'Business', 'Tech', 'Climate', 'Science', 'Sports'],
+    items: [
+      { label: 'Politics', href: '/politics' },
+      { label: 'U.S. News', href: '/us-news' },
+      { label: 'World', href: '/world' },
+      { label: 'Investigations', href: '/investigations' },
+      { label: 'Business', href: '/business' },
+      { label: 'Tech', href: '/tech' },
+      { label: 'Climate', href: '/climate' },
+      { label: 'Sports', href: '/sports' },
+      { label: 'D.C., Md. & Va.', href: '/local' },
+    ],
   },
   {
     title: 'Opinion',
-    items: ['Editorials', 'Columns', 'Letters', 'Op-Eds', 'Guest Opinions', 'Global Opinions'],
+    items: [
+      { label: 'Editorials', href: '/opinions' },
+      { label: 'Columns', href: '/opinions' },
+      { label: 'Letters', href: '/opinions' },
+      { label: 'Op-Eds', href: '/opinions' },
+      { label: 'Guest Opinions', href: '/opinions' },
+      { label: 'Global Opinions', href: '/opinions' },
+    ],
   },
   {
     title: 'Lifestyle',
-    items: ['Style', 'Food', 'Travel', 'Well+Being', 'Arts & Entertainment', 'Books', 'Home'],
+    items: [
+      { label: 'Style', href: '/style' },
+      { label: 'Food', href: '/food' },
+      { label: 'Travel', href: '/travel' },
+      { label: 'Well+Being', href: '/wellbeing' },
+      { label: 'Advice', href: '/advice' },
+      { label: 'Climate', href: '/climate' },
+      { label: 'Obituaries', href: '/obituaries' },
+    ],
   },
   {
     title: 'More',
-    items: ['Podcasts', 'Video', 'Newsletters', 'Games', 'Crosswords', 'WP Intelligence', 'Ripple', 'Obituaries'],
+    items: [
+      { label: 'Podcasts', href: '/podcasts' },
+      { label: 'Video', href: '/video' },
+      { label: 'Newsletters', href: '/newsletters' },
+      { label: 'Games', href: '/games' },
+      { label: 'Crosswords', href: '/games' },
+      { label: 'WP Intelligence', href: '/wp-intelligence' },
+      { label: 'Ripple', href: '/ripple' },
+      { label: 'Obituaries', href: '/obituaries' },
+    ],
   },
 ];
 
-const aboutLinks = ['About Us', 'Masthead', 'Careers', 'Contact Us', 'Advertise', 'Ethics Policy', 'Corrections'];
+const aboutLinks = [
+  { label: 'About Us', href: '/about' },
+  { label: 'Masthead', href: '/about#masthead' },
+  { label: 'Careers', href: '/about#careers' },
+  { label: 'Contact Us', href: '/about#contact' },
+  { label: 'Advertise', href: '/about#contact' },
+  { label: 'Ethics Policy', href: '/about#ethics' },
+  { label: 'Corrections', href: '/about#corrections' },
+];
+
+const socialLinks = [
+  { label: 'Twitter', href: 'https://twitter.com/washingtonpost' },
+  { label: 'Facebook', href: 'https://facebook.com/washingtonpost' },
+  { label: 'Instagram', href: 'https://instagram.com/washingtonpost' },
+  { label: 'YouTube', href: 'https://youtube.com/washingtonpost' },
+];
 
 export default function Footer() {
   return (
@@ -56,10 +106,10 @@ export default function Footer() {
               <h3 className="kicker text-white mb-3 text-[13px]">{section.title}</h3>
               <ul className="space-y-2">
                 {section.items.map((item) => (
-                  <li key={item}>
-                    <a href="#" className="text-sm font-sans text-gray-300 hover:text-white hover:underline">
-                      {item}
-                    </a>
+                  <li key={item.label}>
+                    <Link href={item.href} className="text-sm font-sans text-gray-300 hover:text-white hover:underline">
+                      {item.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -69,10 +119,10 @@ export default function Footer() {
             <h3 className="kicker text-white mb-3 text-[13px]">About</h3>
             <ul className="space-y-2">
               {aboutLinks.map((item) => (
-                <li key={item}>
-                  <a href="#" className="text-sm font-sans text-gray-300 hover:text-white hover:underline">
-                    {item}
-                  </a>
+                <li key={item.label}>
+                  <Link href={item.href} className="text-sm font-sans text-gray-300 hover:text-white hover:underline">
+                    {item.label}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -85,10 +135,10 @@ export default function Footer() {
             © {new Date().getFullYear()} The Washington Post Clone · Built for demo purposes with Next.js & Tailwind CSS.
           </div>
           <div className="flex items-center gap-4 text-xs font-sans text-gray-400">
-            <a href="#" className="hover:text-white">Terms</a>
-            <a href="#" className="hover:text-white">Privacy</a>
-            <a href="#" className="hover:text-white">Cookies</a>
-            <a href="#" className="hover:text-white">Accessibility</a>
+            <Link href="/about#terms" className="hover:text-white">Terms</Link>
+            <Link href="/about#privacy" className="hover:text-white">Privacy</Link>
+            <Link href="/about#cookies" className="hover:text-white">Cookies</Link>
+            <Link href="/about#accessibility" className="hover:text-white">Accessibility</Link>
             <span className="hidden md:inline text-gray-600">|</span>
             <div className="flex gap-2">
               {[
@@ -96,16 +146,21 @@ export default function Footer() {
                 { label: 'Facebook', Icon: FacebookIcon },
                 { label: 'Instagram', Icon: InstagramIcon },
                 { label: 'YouTube', Icon: YoutubeIcon },
-              ].map(({ label, Icon }) => (
-                <a
-                  key={label}
-                  href="#"
-                  aria-label={label}
-                  className="w-11 h-11 md:w-9 md:h-9 inline-flex items-center justify-center border border-gray-700 text-gray-300 hover:text-white hover:border-white transition"
-                >
-                  <Icon className="w-4 h-4" />
-                </a>
-              ))}
+              ].map(({ label, Icon }) => {
+                const social = socialLinks.find((s) => s.label === label);
+                return (
+                  <a
+                    key={label}
+                    href={social?.href || '/'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="w-11 h-11 md:w-9 md:h-9 inline-flex items-center justify-center border border-gray-700 text-gray-300 hover:text-white hover:border-white transition"
+                  >
+                    <Icon className="w-4 h-4" />
+                  </a>
+                );
+              })}
             </div>
           </div>
         </div>

@@ -10,6 +10,13 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Post Reports Podcast — The Washington Post',
   description: 'Twenty minutes, every weekday.',
+  alternates: { canonical: '/podcasts' },
+  openGraph: {
+    type: 'website',
+    title: 'Post Reports Podcast — The Washington Post',
+    description: 'Twenty minutes, every weekday.',
+    siteName: 'The Washington Post',
+  },
 };
 
 const PODCASTS = [
