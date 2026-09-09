@@ -7,7 +7,9 @@ export default function SessionProvider({
   session,
 }: {
   children: React.ReactNode;
-  session: any;
+  // Optional: when omitted, next-auth fetches the session client-side so
+  // server layouts using this provider stay static and cacheable.
+  session?: any;
 }) {
   return <NextAuthSessionProvider session={session}>{children}</NextAuthSessionProvider>;
 }

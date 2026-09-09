@@ -2,7 +2,6 @@ import type { Viewport } from 'next';
 import './globals.css';
 import './view-transitions.css';
 import { ClerkProvider } from '@clerk/nextjs';
-import { auth as nextAuth } from '@/auth';
 import { PaywallProvider } from '@/lib/usePaywall';
 import { siteMetadata, organizationJsonLd, websiteJsonLd } from '@/lib/seo';
 import PWAInit from '@/components/PWAInit';
@@ -35,8 +34,7 @@ const ClerkWrap: React.FC<{ children: React.ReactNode }> = clerkKey
   ? ({ children }) => <ClerkProvider afterSignOutUrl="/">{children}</ClerkProvider>
   : ({ children }) => <>{children}</>;
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const session = await nextAuth();
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
         <head>
@@ -71,7 +69,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             its client SDK against the app tree, and wrapping the document element
             breaks hydration of <head>-level metadata. */}
         <ClerkWrap>
-        <SessionProvider session={session}>
+        {/* Session is fetched client-side by next-auth's SessionProvider so
+            the root layout stays static and cacheable. */}
+        <SessionProvider>
           <PaywallProvider>
             <PodcastProvider>
               <ReadingProvider>
