@@ -1,0 +1,45 @@
+/* ============ View Transitions API (Task 16) ============ */
+/*
+ * We only enable cross-fade + a shared-element hero morph when the UA supports
+ * view-transition-api. Fallback: no transition (plain navigation).
+ * Duration kept short (280ms) — WaPo/news sites should feel snappy.
+ */
+::view-transition-old(root) {
+  animation: vt-fade-out 220ms ease-out both;
+}
+::view-transition-new(root) {
+  animation: vt-fade-in 280ms ease-out 120ms both;
+}
+@keyframes vt-fade-out {
+  to { opacity: 0; transform: translateY(-4px); }
+}
+@keyframes vt-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Shared-element: hero image on article cards → article page hero.
+ * We key the view-transition-name by slug so navigating from any article
+ * card morphs exactly that card's image into the destination hero. */
+::view-transition-group(vt-hero),
+::view-transition-group(vt-title) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+::view-transition-old(vt-hero),
+::view-transition-new(vt-hero) {
+  mix-blend-mode: normal;
+  overflow: clip;
+}
+::view-transition-image-pair(vt-hero) { isolation: auto; }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation-duration: 0.001ms !important; }
+  ::view-transition-group(*) { animation-duration: 0.001ms !important; }
+}
+
+/* Active VT markers are set inline by PageTransitions.tsx at click time,
+ * and by the article page on the hero figure / h1 so the destination of the
+ * shared-element transition has a matching view-transition-name. */

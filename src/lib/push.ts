@@ -1,0 +1,124 @@
+/**
+ * Server-side Web Push helpers.
+ *
+ * Uses VAPID keys from env vars (NEXT_PUBLIC_VAPID_PUBLIC / VAPID_PRIVATE)
+ * with built-in demo keys so the feature works out of the box without any
+ * configuration. In production you MUST override these with your own keys
+ * (generated via `web-push generate-vapid-keys`) and NEVER commit the private
+ * key to source control.
+ *
+ * Subscriptions are stored in an in-memory Set for demo purposes — replace
+ * with a database table in production.
+ */
+
+import webpush from 'web-push';
+import type { PushSubscription as WebPushSubscription } from 'web-push';
+
+const DEFAULT_PUBLIC =
+  'BMW7HFJkqJy27ycVaQ1fkdKRaaeIltTYvE4jmWzc3w1ZM_j3KA-SYzC-Mq3qgACOpENftDOVftwAiaMzqiVfOco';
+const DEFAULT_PRIVATE = 'giZC056jMYk15n3g3joxUD1-9n7qCb012K9LtPL10Ok';
+
+const PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC || DEFAULT_PUBLIC;
+const PRIVATE_KEY = process.env.VAPID_PRIVATE || DEFAULT_PRIVATE;
+const SUBJECT = process.env.VAPID_SUBJECT || 'mailto:push@wapo-clone.example.com';
+
+webpush.setVapidDetails(SUBJECT, PUBLIC_KEY, PRIVATE_KEY);
+
+export function getVapidPublicKey() {
+  return PUBLIC_KEY;
+}
+
+// ---------- Subscription store ----------
+// Map of endpoint -> full subscription object + metadata
+type StoredSub = {
+  sub: WebPushSubscription;
+  topics: Set<string>;
+  addedAt: number;
+  userAgent?: string;
+};
+const subs = new Map<string, StoredSub>();
+
+export function addSubscription(
+  subscription: WebPushSubscription,
+  opts: { topics?: string[]; userAgent?: string } = {},
+) {
+  if (!subscription?.endpoint) return false;
+  const existing = subs.get(subscription.endpoint);
+  subs.set(subscription.endpoint, {
+    sub: subscription,
+    topics: new Set(opts.topics || ['breaking']),
+    addedAt: existing?.addedAt || Date.now(),
+    userAgent: opts.userAgent || existing?.userAgent,
+  });
+  return true;
+}
+
+export function removeSubscription(endpoint: string) {
+  return subs.delete(endpoint);
+}
+
+export function listSubscriptions(topic?: string): StoredSub[] {
+  const all = Array.from(subs.values());
+  if (!topic) return all;
+  return all.filter((s) => s.topics.has(topic));
+}
+
+export function getSubscriptionCount() {
+  return subs.size;
+}
+
+// ---------- Sending ----------
+export type PushPayload = {
+  title: string;
+  body: string;
+  icon?: string;
+  badge?: string;
+  tag?: string;
+  url?: string;
+  image?: string;
+  topic?: string;      // filter to subscribers who opted in to this topic
+  requireInteraction?: boolean;
+  data?: Record<string, unknown>;
+};
+
+export async function sendPush(payload: PushPayload) {
+  const targets = listSubscriptions(payload.topic);
+  if (!targets.length) return { sent: 0, failed: 0 };
+
+  const message = JSON.stringify({
+    title: payload.title,
+    body: payload.body,
+    icon: payload.icon || '/icons/icon-192.png',
+    badge: payload.badge || '/icons/badge-72.png',
+    tag: payload.tag || 'wapo-breaking',
+    url: payload.url || '/',
+    image: payload.image,
+    requireInteraction: !!payload.requireInteraction,
+    data: { url: payload.url || '/', ...(payload.data || {}) },
+  });
+
+  let sent = 0;
+  let failed = 0;
+  const failures: Array<{ endpoint: string; statusCode?: number }> = [];
+
+  await Promise.all(
+    targets.map(async ({ sub }) => {
+      try {
+        await webpush.sendNotification(sub, message, {
+          TTL: 60 * 15, // 15 minutes
+          urgency: 'high',
+        });
+        sent++;
+      } catch (err: any) {
+        failed++;
+        failures.push({ endpoint: sub.endpoint, statusCode: err?.statusCode });
+        // 410 Gone / 404 = subscription expired, remove it
+        if (err?.statusCode === 410 || err?.statusCode === 404) {
+          subs.delete(sub.endpoint);
+        }
+      }
+    }),
+  );
+
+  return { sent, failed, failures };
+}

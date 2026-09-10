@@ -1,0 +1,25 @@
+{
+  "name": "The Washington Post",
+  "short_name": "WaPo",
+  "description": "Breaking news, politics, opinion and world headlines.",
+  "start_url": "/?utm_source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "portrait-primary",
+  "background_color": "#faf9f6",
+  "theme_color": "#121212",
+  "lang": "en-US",
+  "categories": ["news", "magazines"],
+  "shortcuts": [
+    { "name": "Politics", "url": "/politics", "short_name": "Politics" },
+    { "name": "Opinions", "url": "/opinions", "short_name": "Opinions" },
+    { "name": "Live Updates", "url": "/live/shutdown-countdown", "short_name": "Live" }
+  ],
+  "icons": [
+    { "src": "/icons/icon-72.png", "sizes": "72x72", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/badge-72.png", "sizes": "72x72", "type": "image/png", "purpose": "badge monochrome" }
+  ]
+}
