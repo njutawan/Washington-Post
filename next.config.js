@@ -29,6 +29,71 @@ const nextConfig = {
     imageSizes: [96, 128, 256, 384, 512, 768],
     minimumCacheTTL: 60 * 60 * 24 * 30,
   },
+  async headers() {
+    /**
+     * Security headers.
+     *
+     * The hardening headers below are always on. The full CSP is applied in
+     * production only so `next dev`'s HMR websockets and tooling are never
+     * interfered with.
+     *
+     * CSP notes:
+     *  - Next.js App Router inlines its RSC flight scripts, so `script-src`
+     *    must keep 'unsafe-inline' here (per-request nonces are not
+     *    supported for framework-injected scripts in Next 15). Everything
+     *    else stays strict: no remote scripts except Clerk (when configured),
+     *    no objects/plugins, self-only forms, clickjacking denied, and
+     *    image/media/connect sources limited to the hosts the site actually
+     *    uses (Unsplash/Picsum/LoremFlickr/Twitter/YouTube images, SoundHelix
+     *    podcast audio, Sentry ingest, optional Plausible domain).
+     */
+    const always = {
+      'X-Content-Type-Options': 'nosniff',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'X-Frame-Options': 'DENY',
+      'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+    };
+
+    const productionCsp = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.accounts.dev",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https://images.unsplash.com https://picsum.photos https://loremflickr.com https://i.ytimg.com https://pbs.twimg.com",
+      "font-src 'self' data:",
+      "media-src 'self' https://www.soundhelix.com",
+      `connect-src 'self' https://www.soundhelix.com https://*.ingest.sentry.io https://*.clerk.com https://*.clerk.accounts.dev${
+        process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN ? ` https://${process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN}` : ''
+      }`,
+      "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.youtube.com https://platform.twitter.com",
+      "worker-src 'self'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+      "upgrade-insecure-requests",
+    ].join('; ');
+
+    const headers = [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Content-Type-Options', value: always['X-Content-Type-Options'] },
+          { key: 'Referrer-Policy', value: always['Referrer-Policy'] },
+          { key: 'X-Frame-Options', value: always['X-Frame-Options'] },
+          { key: 'Permissions-Policy', value: always['Permissions-Policy'] },
+          // Long-lived immutable hashed assets — belt-and-braces on top of
+          // Next's own headers for /_next/static chunks.
+          { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
+        ],
+      },
+    ];
+
+    if (process.env.NODE_ENV === 'production') {
+      headers[0].headers.push({ key: 'Content-Security-Policy', value: productionCsp });
+    }
+
+    return headers;
+  },
 };
 
 // Wrap with MDX support.

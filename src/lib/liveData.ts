@@ -124,12 +124,51 @@ const nextSeq: Record<string, number> = {};
 const timers: Record<string, ReturnType<typeof setTimeout> | undefined> = {};
 const lastIssuedTs: Record<string, number> = {};
 
+/** Canonical live-blog slugs that have seeded demo content. */
+export const LIVE_BLOG_CANONICAL_SLUGS = ['shutdown-deal'];
+
 /** Legacy URL slugs that should resolve to the same live stream as a canonical slug. */
 const LEGACY_SLUG_MAP: Record<string, string> = {
   'shutdown-countdown': 'shutdown-deal',
 };
 
+/** Every slug the site accepts (canonical + legacy aliases). */
+export const LIVE_BLOG_SLUGS: string[] = [
+  ...LIVE_BLOG_CANONICAL_SLUGS,
+  ...Object.keys(LEGACY_SLUG_MAP),
+];
+
+/**
+ * Single source of truth for live-blog page metadata (title/dek). The page,
+ * its metadata, and the SSE endpoint all derive from this, so the UI and the
+ * stream can never disagree about which blogs exist.
+ */
+export const KNOWN_LIVE_BLOGS: Record<string, { title: string; dek: string }> = {
+  'shutdown-deal': {
+    title: 'Government shutdown countdown: House passes short-term bill, sending it to Senate',
+    dek: 'Follow here for the latest as lawmakers race to beat Sunday’s midnight deadline.',
+  },
+  'shutdown-countdown': {
+    title: 'Government shutdown countdown: House passes short-term bill, sending it to Senate',
+    dek: 'Follow here for the latest as lawmakers race to beat Sunday’s midnight deadline.',
+  },
+};
+
+const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,62})$/;
+const MAX_UPDATES_PER_BLOG = 200; // hard cap so the in-memory store can't grow unbounded
+
+/**
+ * Validate a live-blog slug. The store only ever accepts slugs from the
+ * known set (canonical or legacy alias) — arbitrary slugs from HTTP input
+ * must never create store entries or simulation timers (DoS guard).
+ */
+export function isValidLiveSlug(slug: unknown): slug is string {
+  if (typeof slug !== 'string' || !SLUG_RE.test(slug)) return false;
+  return (LIVE_BLOG_SLUGS as string[]).includes(slug);
+}
+
 function ensureBlog(slug: string) {
+  if (!isValidLiveSlug(slug)) return;
   if (store[slug]) return;
   // Canonical demo live blogs live under one id; we accept a couple of legacy
   // URL slugs that point to the same stream.
@@ -174,6 +213,7 @@ function formatET(ts: number): string {
 }
 
 function pushNewUpdate(slug: string, template?: Omit<LiveUpdate, 'id' | 'slug' | 'timestamp'>) {
+  if (!isValidLiveSlug(slug)) throw new Error(`Unknown live blog slug: ${String(slug)}`);
   ensureBlog(slug);
   const pool = rotatingPool;
   const tpl = template || pool[Math.floor(Math.random() * pool.length)];
@@ -192,8 +232,12 @@ function pushNewUpdate(slug: string, template?: Omit<LiveUpdate, 'id' | 'slug' |
     // Mark every third simulated update as "LIVE" so the pulse badge appears.
     live: (nextSeq[slug] % 3 === 0) ? true : !!tpl.live,
   };
-  // Newest first
+  // Newest first; drop oldest beyond the cap so long-running demo sessions
+  // can't grow the store without bound.
   store[slug].unshift(update);
+  if (store[slug].length > MAX_UPDATES_PER_BLOG) {
+    store[slug].length = MAX_UPDATES_PER_BLOG;
+  }
   // Notify all SSE subscribers
   const subs = subscribers.get(slug);
   if (subs) {
@@ -207,7 +251,9 @@ function pushNewUpdate(slug: string, template?: Omit<LiveUpdate, 'id' | 'slug' |
 /** Start auto-publishing simulated updates for a slug (e.g. every ~45–75s). */
 function startSimulation(slug: string) {
   if (timers[slug]) return;
-  // Randomize first delay slightly so reconnects don't cluster.
+  // Randomize first delay slightly so reconnects don't cluster. The chain
+  // only continues while a timeout is pending, so stopSimulation() (clearTimeout
+  // on the currently-pending handle) reliably terminates it.
   const tick = () => {
     pushNewUpdate(slug);
     timers[slug] = setTimeout(tick, 45_000 + Math.random() * 30_000);
@@ -215,8 +261,17 @@ function startSimulation(slug: string) {
   timers[slug] = setTimeout(tick, 30_000 + Math.random() * 20_000);
 }
 
+/** Stop the simulation timer for a slug. */
+function stopSimulation(slug: string) {
+  if (timers[slug]) {
+    clearTimeout(timers[slug]);
+    timers[slug] = undefined;
+  }
+}
+
 /** Get the current list of updates for a slug (SSR-safe). */
 export function getLiveUpdates(slug: string): LiveUpdate[] {
+  if (!isValidLiveSlug(slug)) return [];
   ensureBlog(slug);
   // Return copy, newest first
   return [...store[slug]].sort((a, b) => b.timestamp - a.timestamp);
@@ -224,20 +279,30 @@ export function getLiveUpdates(slug: string): LiveUpdate[] {
 
 /** Get updates strictly newer than a given timestamp. */
 export function getUpdatesSince(slug: string, since: number): LiveUpdate[] {
+  if (!isValidLiveSlug(slug)) return [];
   ensureBlog(slug);
   return store[slug]
     .filter((u) => u.timestamp > since)
     .sort((a, b) => b.timestamp - a.timestamp);
 }
 
-/** Register a subscriber that will be called with every new update. */
+/**
+ * Register a subscriber that will be called with every new update.
+ *
+ * The simulated-updates timer is tied to the subscriber lifecycle: it starts
+ * when the first subscriber connects and stops when the last one leaves, so
+ * short-lived SSE connections can't accumulate dangling timers.
+ */
 export function subscribe(slug: string, fn: (u: LiveUpdate) => void): () => void {
+  if (!isValidLiveSlug(slug)) return () => {};
   ensureBlog(slug);
-  startSimulation(slug);
   const subs = subscribers.get(slug)!;
+  const isFirst = subs.size === 0;
   subs.add(fn);
+  if (isFirst) startSimulation(slug);
   return () => {
     subs.delete(fn);
+    if (subs.size === 0) stopSimulation(slug);
   };
 }
 

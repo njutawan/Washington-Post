@@ -107,3 +107,66 @@ each run. **Action:** when a patched `elliptic` release (or a
   blocking.
 - Secrets: `.env` is gitignored (only `.env.example` is committed) — keep it that
   way.
+
+---
+
+# Code review & engineering hardening (2026-09-10)
+
+A manual review of the source found several real defects beyond the
+dependency audit. All are fixed; the full gate (tsc, lint, unit tests,
+production build) is green and the hardened endpoints were exercised against a
+running `next start` instance.
+
+## Security
+
+| Area | Problem | Fix |
+|------|---------|-----|
+| `next.config.js` | No security headers at all — no CSP, no `X-Content-Type-Options`, no clickjacking protection, no referrer policy | Added `headers()`: `nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY` + CSP `frame-ancestors 'none'`, `Permissions-Policy`, and a **production Content-Security-Policy** (self-only by default; img/media/connect restricted to the exact hosts the site uses — Unsplash/Picsum/LoremFlickr/Twitter/YouTube images, SoundHelix podcast audio, Sentry ingest, Clerk, optional Plausible). CSP is applied in production only so `next dev` HMR is unaffected. `script-src` keeps `'unsafe-inline'` because Next's App Router inlines its RSC flight scripts and Next 15 cannot nonce framework-injected scripts; everything else is strict. |
+| `src/auth.ts` | Hard-coded public fallback JWT secret (`wapo-demo-secret-change-me-in-production`) — anyone knowing the source could forge session tokens | No public constant in production: if `NEXTAUTH_SECRET` is unset at production runtime a **random per-process** secret is generated with a loud warning (sessions won't survive restarts — set the env var for real deploys). Dev keeps a fixed secret for zero-config convenience. |
+| `src/auth.ts` | 1-click "demo" credentials provider signs a fixed account in **without any check** — enabled in production by default whenever Google isn't configured | Disabled in production unless `NEXT_PUBLIC_ENABLE_DEMO=1`. The `/signin` demo button mirrors the exact same condition, so button and provider can't disagree. |
+| `src/middleware.ts` | The Clerk "protected API" check was **inverted and inoperative**: the handler treated `auth` (an async function in this Clerk version) as an object, and returned `next()` in the not-signed-in branch — i.e. it never blocked anything | Rewritten: `await auth()`; anonymous callers on protected API routes get a **401 JSON** response (defense in depth on top of the per-route `auth()` checks). Load-failure is now properly memoized. |
+| `src/app/api/live/publish` | Public, unauthenticated, **no input limits, no slug validation** — writes into the in-memory live store; in production anyone could spam/pollute live blogs or spawn unbounded state | `devOnlyGuard`: 501 in production unless `LIVE_PUBLISH_TOKEN` is set and presented (constant-time compare). Slug must be a known live blog; title ≤200 / body ≤2000 / byline ≤100. |
+| `src/app/api/push/send` | Public, unauthenticated broadcast of push notifications, no input validation (arbitrary title/body/url/image/topic) | Same `devOnlyGuard` pattern (`PUSH_SEND_TOKEN` + `x-push-send-token`). title ≤150 / body ≤400; `url`/`image` must be same-origin relative paths (no open redirects); `topic` restricted to the known set. |
+| `src/app/api/push/subscribe` | Public endpoint stored **uncapped** endpoint/keys strings into an in-memory `Map` — unbounded memory growth | Field length caps (endpoint ≤2048, keys ≤256, topics ≤10×50, UA ≤256) and a **10k subscription cap with oldest-eviction** in `src/lib/push.ts`. |
+| `src/app/api/analytics/collect` | Public endpoint accepted unbounded `sid`/`name`/`referrer` and arbitrary `props` objects — memory pressure + garbage in stats | Every field length-capped and type-checked; `props` sanitized to ≤12 scalar keys with bounded string values. |
+| `src/lib/db.ts` | Single-shot SHA-256 password hashing + non-constant-time comparison | New passwords use **scrypt** (N=16384, r=8, p=1, 64-byte key, per-user salt, self-contained `scrypt$N$r$p$salt$hash` format); comparison via `timingSafeEqual`. Legacy SHA-256 records still verify and are **transparently upgraded** to scrypt on next sign-in. |
+| `src/lib/liveData.ts` | `ensureBlog()`/`startSimulation()` accepted **any slug from HTTP input**: each unique slug created permanent store entries, and each subscriber connection leaked a self-rescheduling timer that never stopped — a slow memory/CPU DoS | `isValidLiveSlug()` allowlist (canonical + legacy aliases); per-blog store capped at 200 updates; simulation timer now starts on first subscriber and **stops when the last one disconnects**. |
+
+## Correctness / engineering
+
+| Area | Problem | Fix |
+|------|---------|-----|
+| `src/app/api/feed/route.ts` | RSS `<description>` escaped the **entire** string, so the intentionally injected `<img>` tag was emitted as literal `&lt;img …&gt;` text in every RSS reader | Escape the dek first, then append the (trusted, in-repo) `<img>` markup. Verified: feed now contains real `<img>` tags, zero escaped ones. |
+| `src/app/signin/page.tsx` | `router.replace()` called **during render** (React anti-pattern / render-phase update) when already authenticated | Moved into `useEffect`. Also removed the dead `condition \|\| true` around the demo button (see security table). |
+| `src/lib/useLiveUpdates.ts` | `reconnectTimer` ref was declared and read in cleanup but **never assigned** — dead code, and the source of the `react-hooks/exhaustive-deps` lint warning | Removed. |
+| `src/app/author/[slug]/page.tsx` | Raw `<img>` for above-the-fold avatars (LCP) | `next/image` with `fill`/`priority`/`sizes` (host already in `remotePatterns`). ESLint is now **warning-free**. |
+| `public/sw.js` | Page cache (`wapo-pages-*`) grew **unbounded** — every visited article cached forever | Bounded to 60 pages (oldest-first eviction, `/offline` always kept); cache version bumped to v3 so stale v2 caches are purged on activate. |
+| `src/app/layout.tsx` | Inline theme script triggered `no-sync-scripts` when moved to a file; keeping it inline with a documented `eslint-disable` is the standard Next.js pattern for anti-FOUC head scripts | Restored inline script with an explicit, justified disable comment. |
+
+## Verification performed
+
+- `npx tsc --noEmit` — clean
+- `npm run lint` — **no warnings or errors** (was 2 warnings)
+- `npm test` — 31/31 passing (incl. new `tests/unit/db.test.ts` for scrypt +
+  legacy upgrade, and rewritten `tests/unit/live.test.ts` covering the slug
+  allowlist / DoS guard)
+- `npm run build` (production) — succeeds
+- Running `next start` (production):
+  - response headers include the full CSP + hardening headers
+  - `GET /api/live/updates?slug=evil` → **404**; `?slug=shutdown-deal` → SSE sync OK
+  - `POST /api/live/publish` without token → **501**; with `LIVE_PUBLISH_TOKEN`
+    match → **200** and update published; wrong token → 501
+  - `/api/feed` → valid XML with real `<img>` tags
+  - all external hosts referenced by served HTML are inside the CSP allowlist
+- Playwright e2e: browser binaries are not installable in this sandbox
+  (CDN blocked), so the suite runs in GitHub CI as before; it targets the dev
+  server where the dev-only endpoints remain open by design.
+
+## New environment variables (see `.env.example`)
+
+| Var | Purpose |
+|-----|---------|
+| `NEXTAUTH_SECRET` | **Required for real production deploys.** Missing at prod runtime → random per-process secret + loud warning (never a public constant). |
+| `NEXT_PUBLIC_ENABLE_DEMO` | `1` = keep the no-credential demo sign-in in production (default: off there, on in dev). |
+| `LIVE_PUBLISH_TOKEN` | Unlocks `POST /api/live/publish` in production (header `x-live-publish-token`). Unset = endpoint disabled (501). |
+| `PUSH_SEND_TOKEN` | Unlocks `POST /api/push/send` in production (header `x-push-send-token`). Unset = endpoint disabled (501). |

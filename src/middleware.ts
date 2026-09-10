@@ -4,7 +4,9 @@
  * When NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is configured (in .env.local),
  * clerkMiddleware() wires up Clerk's session/auth on every request so
  * <SignInButton />, <UserButton />, auth() and the Clerk client components
- * work out of the box.
+ * work out of the box. It also enforces authentication on the protected
+ * JSON API routes (401 for anonymous callers) — defense in depth on top of
+ * the per-route `auth()` checks.
  *
  * When Clerk keys are *not* set (local dev without Clerk), middleware is a
  * no-op pass-through so the existing NextAuth demo sign-in continues to
@@ -12,14 +14,17 @@
  */
 import { NextResponse, type NextRequest } from 'next/server';
 
+type ClerkAuthFn = () => Promise<{ userId?: string | null }>;
 type ClerkMiddleware = (req: NextRequest) => Promise<Response>;
+
 let clerkMw: ClerkMiddleware | null = null;
+let clerkLoaded = false;
 
 async function loadClerk(): Promise<ClerkMiddleware | null> {
-  if (clerkMw !== undefined && clerkMw !== null) return clerkMw;
+  if (clerkLoaded) return clerkMw;
   try {
     const clerk = await import('@clerk/nextjs/server') as unknown as {
-      clerkMiddleware: (fn: (auth: unknown, req: NextRequest) => Promise<Response>) => ClerkMiddleware;
+      clerkMiddleware: (fn: (auth: ClerkAuthFn, req: NextRequest) => Promise<Response>) => ClerkMiddleware;
       createRouteMatcher: (patterns: string[]) => (req: NextRequest) => boolean;
     };
     const isProtectedApi = clerk.createRouteMatcher([
@@ -28,20 +33,25 @@ async function loadClerk(): Promise<ClerkMiddleware | null> {
       '/api/newsletters(.*)',
       '/api/me(.*)',
     ]);
-    clerkMw = clerk.clerkMiddleware(async (auth: unknown, req: NextRequest) => {
+    clerkMw = clerk.clerkMiddleware(async (auth: ClerkAuthFn, req: NextRequest) => {
       if (isProtectedApi(req)) {
         try {
-          const a = auth as { userId?: string | null };
-          if (!a.userId) return NextResponse.next();
-        } catch { return NextResponse.next(); }
+          const session = await auth();
+          if (!session.userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+          }
+        } catch {
+          // Auth check failed (e.g. malformed token) — treat as anonymous.
+          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
       }
       return NextResponse.next();
     });
-    return clerkMw;
   } catch {
     clerkMw = null;
-    return null;
   }
+  clerkLoaded = true; // cache success AND failure so we don't re-import per request
+  return clerkMw;
 }
 
 // Kick off loading Clerk at module load so it's ready by first request.
@@ -56,6 +66,7 @@ export async function middleware(req: NextRequest) {
       const mw = await clerkPromise;
       if (mw) return await mw(req);
     } catch {
+      // Never take the site down because of middleware trouble.
       return NextResponse.next();
     }
   }

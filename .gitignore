@@ -6,6 +6,8 @@
 .next
 dist
 storybook-static
+test-results
+playwright-report
 node_modules
 out
 tsconfig.tsbuildinfo

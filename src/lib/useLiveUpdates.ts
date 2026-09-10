@@ -35,7 +35,6 @@ export function useLiveUpdates(slug: string, initial: LiveUpdate[] = []) {
 
   const esRef = useRef<EventSource | null>(null);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modeRef = useRef<'sse' | 'poll' | null>(null);
   const sseConnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const failCount = useRef(0);
@@ -171,9 +170,6 @@ export function useLiveUpdates(slug: string, initial: LiveUpdate[] = []) {
     if (!slug) return;
     startSSE();
     return () => {
-      // Copy ref to a local variable so cleanup always uses the same handle.
-      const rt = reconnectTimer.current;
-      if (rt) clearTimeout(rt);
       stopSSE();
       stopPolling();
     };

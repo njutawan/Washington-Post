@@ -1,11 +1,12 @@
 /* eslint-disable */
-/* Service Worker v2 — offline caching + push notifications + background sync */
-const CACHE_VERSION = 'wapo-v2';
-const STATIC_CACHE = 'wapo-static-v2';
-const PAGES_CACHE = 'wapo-pages-v2';
+/* Service Worker v3 — offline caching + push notifications + background sync */
+const CACHE_VERSION = 'wapo-v3';
+const STATIC_CACHE = 'wapo-static-v3';
+const PAGES_CACHE = 'wapo-pages-v3';
 const PRECACHE_URLS = ['/', '/offline', '/politics', '/opinions', '/newsletters'];
 const OFFLINE_QUEUE = 'wapo-offline-queue';
 const BG_SYNC_TAG = 'wapo-bg-sync';
+const MAX_CACHED_PAGES = 60; // bound the page cache so it can't grow forever
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -127,6 +128,27 @@ async function replayOfflineQueue() {
   return results;
 }
 
+/**
+ * Keep the page cache bounded: drop the oldest entries beyond the cap.
+ * Cache.keys() is returned in insertion order by browsers, so evicting from
+ * the front is a good-enough LRU for offline navigation. Always keep the
+ * offline fallback page.
+ */
+async function putPage(request, res) {
+  try {
+    const cache = await caches.open(PAGES_CACHE);
+    await cache.put(request, res.clone());
+    const keys = await cache.keys();
+    const evictable = keys.filter((k) => new URL(k.url).pathname !== '/offline');
+    if (evictable.length > MAX_CACHED_PAGES) {
+      const toDelete = evictable.slice(0, evictable.length - MAX_CACHED_PAGES);
+      await Promise.all(toDelete.map((k) => cache.delete(k)));
+    }
+  } catch (e) {
+    /* cache is best-effort */
+  }
+}
+
 // ---------- Fetch handling ----------
 self.addEventListener('fetch', (event) => {
   const { request } = event;
@@ -170,8 +192,7 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .then((res) => {
           if (res && res.status === 200) {
-            const resClone = res.clone();
-            caches.open(PAGES_CACHE).then((cache) => cache.put(request, resClone));
+            putPage(request, res);
           }
           return res;
         })

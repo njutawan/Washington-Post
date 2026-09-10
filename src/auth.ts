@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
@@ -66,7 +67,15 @@ if (process.env.APPLE_ID && process.env.APPLE_SECRET) {
 
 // If no OAuth providers are configured, expose a demo "one-click" provider so
 // reviewers can test the account experience without needing env vars.
-if (!process.env.GOOGLE_CLIENT_ID) {
+// Security: this provider signs in a fixed account with NO credential
+// check, so it is disabled in production unless explicitly re-enabled with
+// NEXTAUTH_ENABLE_DEMO=1.
+// NEXT_PUBLIC_ prefix so the /signin page can mirror this exact condition
+// when deciding whether to render the demo button (client + server agree).
+const demoProviderEnabled =
+  process.env.NEXT_PUBLIC_ENABLE_DEMO === '1' || process.env.NODE_ENV !== 'production';
+
+if (!process.env.GOOGLE_CLIENT_ID && demoProviderEnabled) {
   // Demo provider: sign in as demo@wapo-clone.example.com instantly.
   providers.push({
     id: 'demo',
@@ -87,10 +96,30 @@ if (!process.env.GOOGLE_CLIENT_ID) {
   } as any);
 }
 
+// Security: never fall back to a public/known constant in production — that
+// would let anyone forge session JWTs. If NEXTAUTH_SECRET is missing at
+// production runtime we generate a random per-process secret instead: the
+// site stays up and no public secret is ever used, but sessions won't survive
+// restarts (and with multiple instances each instance has its own). Set
+// NEXTAUTH_SECRET in real deployments (see .env.example).
+const nextAuthSecret = (() => {
+  if (process.env.NEXTAUTH_SECRET) return process.env.NEXTAUTH_SECRET;
+  if (process.env.NODE_ENV !== 'production') {
+    return 'wapo-demo-secret-dev-only';
+  }
+  // eslint-disable-next-line no-console
+  console.warn(
+    '[auth] NEXTAUTH_SECRET is not set. Using a random per-process secret — ' +
+      'sessions will not survive restarts and multi-instance deploys will ' +
+      'desync. Set NEXTAUTH_SECRET in production.',
+  );
+  return randomBytes(32).toString('hex');
+})();
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
   session: { strategy: 'jwt' },
-  secret: process.env.NEXTAUTH_SECRET || 'wapo-demo-secret-change-me-in-production',
+  secret: nextAuthSecret,
   trustHost: true,
   pages: {
     signIn: '/signin',

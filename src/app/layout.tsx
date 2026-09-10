@@ -45,8 +45,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <meta name="apple-mobile-web-app-title" content="WaPo" />
         <link rel="apple-touch-icon" href="/favicon.png" />
         <link rel="preload" as="image" href="https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=1600&q=80" fetchPriority="high" />
-        {/* Apply saved theme before paint to avoid FOUC */}
+        {/* Apply saved theme before paint to avoid FOUC. Must run synchronously
+            in <head>, hence the eslint-disable (Next's no-sync-scripts rule). */}
         <script
+          // eslint-disable-next-line @next/next/no-sync-scripts
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('wapo:theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark');}}catch(e){}})();`,
           }}

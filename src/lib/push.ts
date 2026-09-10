@@ -38,11 +38,36 @@ type StoredSub = {
 };
 const subs = new Map<string, StoredSub>();
 
+/**
+ * Hard cap on stored subscriptions. The store is in-memory (demo) and fed by
+ * a public endpoint — without a cap an attacker could grow the process's
+ * memory by POSTing unique endpoint strings forever. When full we evict the
+ * oldest subscriptions first.
+ */
+const MAX_SUBSCRIPTIONS = 10_000;
+
+function evictOldestIfNeeded() {
+  while (subs.size >= MAX_SUBSCRIPTIONS) {
+    let oldestKey: string | null = null;
+    let oldestAt = Infinity;
+    for (const [key, s] of subs) {
+      if (s.addedAt < oldestAt) {
+        oldestAt = s.addedAt;
+        oldestKey = key;
+      }
+    }
+    if (oldestKey === null) break;
+    subs.delete(oldestKey);
+  }
+}
+
 export function addSubscription(
   subscription: WebPushSubscription,
   opts: { topics?: string[]; userAgent?: string } = {},
 ) {
   if (!subscription?.endpoint) return false;
+  const isNew = !subs.has(subscription.endpoint);
+  if (isNew) evictOldestIfNeeded();
   const existing = subs.get(subscription.endpoint);
   subs.set(subscription.endpoint, {
     sub: subscription,

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
 import Link from 'next/link';
 import Masthead from '@/components/Masthead';
 import Footer from '@/components/Footer';
@@ -65,11 +66,13 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
           <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-start">
             <div className="w-36 h-36 sm:w-44 sm:h-44 md:w-56 md:h-56 rounded-full overflow-hidden bg-wp-black flex-shrink-0 border-4 border-wp-black relative shadow-lg">
               {author.avatar ? (
-                <img
+                <Image
                   src={author.avatar}
                   alt={author.name}
-                  loading="eager"
-                  className="w-full h-full object-cover"
+                  fill
+                  priority
+                  sizes="(min-width: 768px) 14rem, (min-width: 640px) 11rem, 9rem"
+                  className="object-cover"
                 />
               ) : (
                 <span className="flex items-center justify-center w-full h-full font-display font-black text-white text-6xl md:text-7xl">

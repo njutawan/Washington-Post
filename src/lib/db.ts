@@ -1,4 +1,4 @@
-import { randomBytes, createHash } from 'crypto';
+import { randomBytes, createHash, scryptSync, timingSafeEqual } from 'crypto';
 
 /**
  * Lightweight file-backed JSON store for the Auth demo.
@@ -14,8 +14,8 @@ type DB = {
     email: string;
     name?: string;
     image?: string;
-    passwordHash?: string; // hex(sha256(salt + password))
-    salt?: string;
+    passwordHash?: string; // 'scrypt$N$r$p$salt$hash' (new) or legacy raw sha256 hex
+    salt?: string; // legacy only — scrypt salt is embedded in passwordHash
     createdAt: string;
     newsletterPreferences: Record<string, boolean>;
   }>;
@@ -64,10 +64,63 @@ function genId(len = 16) {
   return randomBytes(len).toString('hex');
 }
 
-function hashPassword(password: string, salt?: string) {
-  const s = salt || randomBytes(16).toString('hex');
-  const hash = createHash('sha256').update(s + password).digest('hex');
-  return { salt: s, hash };
+/**
+ * Password hashing.
+ *
+ * New passwords use scrypt (a memory-hard KDF) with a per-user random salt,
+ * stored self-contained as `scrypt$<N>$<r>$<p>$<saltHex>$<hashHex>`.
+ *
+ * Legacy demo DBs stored a single-shot sha256 hex in `passwordHash` plus the
+ * salt in a separate `salt` field. Those keep verifying, and are upgraded to
+ * scrypt transparently on the next successful sign-in.
+ */
+const SCRYPT_PARAMS = { N: 16384, r: 8, p: 1, keylen: 64 };
+
+function hashPasswordScrypt(password: string, saltHex?: string): string {
+  const salt = saltHex ? Buffer.from(saltHex, 'hex') : randomBytes(16);
+  const hash = scryptSync(password, salt, SCRYPT_PARAMS.keylen, {
+    N: SCRYPT_PARAMS.N,
+    r: SCRYPT_PARAMS.r,
+    p: SCRYPT_PARAMS.p,
+  });
+  return `scrypt$${SCRYPT_PARAMS.N}$${SCRYPT_PARAMS.r}$${SCRYPT_PARAMS.p}$${salt.toString('hex')}$${hash.toString('hex')}`;
+}
+
+function hashPasswordSha256Hex(password: string, saltHex: string): string {
+  return createHash('sha256').update(saltHex + password).digest('hex');
+}
+
+function safeEqualHex(a: string, b: string) {
+  const ba = Buffer.from(a, 'hex');
+  const bb = Buffer.from(b, 'hex');
+  if (ba.length === 0 || ba.length !== bb.length) return false;
+  return timingSafeEqual(ba, bb);
+}
+
+/**
+ * Verify a password against a stored record.
+ * Returns 'scrypt' | 'legacy' | null ('legacy' = verified, needs rehash).
+ */
+function verifyStoredPassword(
+  password: string,
+  user: { passwordHash?: string; salt?: string },
+): 'scrypt' | 'legacy' | null {
+  const stored = user.passwordHash || '';
+  if (stored.startsWith('scrypt$')) {
+    const [, N, r, p, saltHex, hashHex] = stored.split('$');
+    if (!saltHex || !hashHex) return null;
+    const candidate = scryptSync(password, Buffer.from(saltHex, 'hex'), SCRYPT_PARAMS.keylen, {
+      N: Number(N),
+      r: Number(r),
+      p: Number(p),
+    });
+    return safeEqualHex(candidate.toString('hex'), hashHex) ? 'scrypt' : null;
+  }
+  // Legacy: raw sha256 hex + separate salt field.
+  if (stored && user.salt) {
+    return safeEqualHex(hashPasswordSha256Hex(password, user.salt), stored) ? 'legacy' : null;
+  }
+  return null;
 }
 
 export async function findUserByEmail(email: string) {
@@ -91,14 +144,14 @@ export async function createUserWithEmail({
 }) {
   const db = await load();
   const id = genId();
-  const pw = password ? hashPassword(password) : null;
+  const passwordHash = password ? hashPasswordScrypt(password) : undefined;
   const user: DB['users'][number] = {
     id,
     email: email.toLowerCase(),
     name: name || email.split('@')[0],
     createdAt: new Date().toISOString(),
     newsletterPreferences: { 'morning-mix': true },
-    ...(pw ? { passwordHash: pw.hash, salt: pw.salt } : {}),
+    ...(passwordHash ? { passwordHash } : {}),
   };
   db.users.push(user);
   await save();
@@ -107,9 +160,15 @@ export async function createUserWithEmail({
 
 export async function verifyPassword(email: string, password: string) {
   const user = await findUserByEmail(email);
-  if (!user || !user.passwordHash || !user.salt) return null;
-  const { hash } = hashPassword(password, user.salt);
-  if (hash !== user.passwordHash) return null;
+  if (!user || !user.passwordHash) return null;
+  const result = verifyStoredPassword(password, user);
+  if (!result) return null;
+  // Transparent upgrade: legacy sha256 hashes are re-hashed with scrypt.
+  if (result === 'legacy') {
+    user.passwordHash = hashPasswordScrypt(password);
+    delete user.salt;
+    await save();
+  }
   return user;
 }
 
@@ -213,4 +272,9 @@ export async function getUserProfile(userId: string) {
     ...safe,
     bookmarks: await getBookmarks(userId),
   };
+}
+
+/** Test-only helper: drop the in-memory cache so the next read re-reads the file. */
+export function _resetForTests() {
+  memory = null;
 }
