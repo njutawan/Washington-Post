@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ShareIcon, LinkIcon, TwitterIcon, FacebookIcon, CheckIcon } from './Icons';
 import { track } from '@/lib/track';
+import { showToast } from './Toaster';
 
 type Props = {
   url?: string;       // absolute or relative; defaults to current page
@@ -73,10 +74,11 @@ export default function ShareSheet({ url, title, text, className = '', variant =
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       trackShare('copy');
+      showToast('Link copied to clipboard');
       setTimeout(() => {
         setCopied(false);
         setOpen(false);
-      }, 1800);
+      }, 1400);
     } catch {
       // Legacy fallback
       const ta = document.createElement('textarea');
@@ -89,6 +91,13 @@ export default function ShareSheet({ url, title, text, className = '', variant =
   };
 
   const twUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(shareUrl)}`;
+  const shareX = (e: React.MouseEvent) => {
+    trackShare('twitter');
+    if (typeof window !== 'undefined') {
+      e.preventDefault();
+      window.open(twUrl, 'xshare', 'width=600,height=500,noopener');
+    }
+  };
   const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
   const emailUrl = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent((text ? text + '\n\n' : '') + shareUrl)}`;
 
@@ -132,7 +141,7 @@ export default function ShareSheet({ url, title, text, className = '', variant =
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-wp-light tap-target"
-                onClick={() => trackShare('twitter')}
+                onClick={shareX}
               >
                 <TwitterIcon className="w-4 h-4" />
                 <span>Share on X / Twitter</span>
@@ -145,7 +154,14 @@ export default function ShareSheet({ url, title, text, className = '', variant =
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-wp-light tap-target"
-                onClick={() => trackShare('facebook')}
+                onClick={(e) => {
+                  trackShare('facebook');
+                  // FB share popup at reasonable size; also prevent navigation so the popup opens instead of following href
+                  if (typeof window !== 'undefined') {
+                    e.preventDefault();
+                    window.open(fbUrl, 'fbshare', 'width=640,height=480,noopener');
+                  }
+                }}
               >
                 <FacebookIcon className="w-4 h-4" />
                 <span>Share on Facebook</span>

@@ -32,6 +32,7 @@ async function loadClerk(): Promise<ClerkMiddleware | null> {
       '/api/comments(.*)',
       '/api/newsletters(.*)',
       '/api/me(.*)',
+      '/api/editorial(.*)',
     ]);
     clerkMw = clerk.clerkMiddleware(async (auth: ClerkAuthFn, req: NextRequest) => {
       if (isProtectedApi(req)) {
