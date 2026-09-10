@@ -5,6 +5,7 @@
 .env.local
 .next
 dist
+storybook-static
 node_modules
 out
 tsconfig.tsbuildinfo
