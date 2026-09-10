@@ -27,7 +27,9 @@ async function loadClerk(): Promise<ClerkMiddleware | null> {
       '/api/comments(.*)',
       '/api/newsletters(.*)',
       '/api/me(.*)',
+      '/api/editorial(.*)',
     ]);
+    const isEditorial = clerk.createRouteMatcher(['/editorial(.*)']);
     clerkMw = clerk.clerkMiddleware(async (auth: unknown, req: NextRequest) => {
       if (isProtectedApi(req)) {
         try {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 
 type Slot = 'top-banner' | 'mid-article' | 'sidebar' | 'sticky-sidebar';
 
@@ -11,6 +12,66 @@ type Props = {
   height?: number;
   className?: string;
 };
+
+// Fake advertiser creatives — these are clearly-demarcated demo ads so the
+// page never shows empty "Ad" grey boxes. One creative is picked per slot
+// instance on mount (random + slot-seeded), and rotates every 45s.
+const FAKE_CREATIVES = [
+  {
+    advertiser: 'Acme Banking',
+    headline: 'Earn 4.50% APY — no fees, no minimums',
+    body: 'High-yield savings with mobile deposit and FDIC insurance.',
+    cta: 'Open an account',
+    bg: 'bg-blue-900',
+    fg: 'text-white',
+    accent: 'bg-yellow-400 text-black',
+  },
+  {
+    advertiser: 'Capital Coffee',
+    headline: 'Cold brew delivered before your alarm',
+    body: 'Weekly beans, fresh-roasted in D.C. First bag free.',
+    cta: 'Get started',
+    bg: 'bg-[#2b1d14]',
+    fg: 'text-[#f0e6d2]',
+    accent: 'bg-[#c19a6b] text-black',
+  },
+  {
+    advertiser: 'Veridian EV',
+    headline: 'The new Veridian S goes 420 miles on a charge',
+    body: 'Pre-order today and lock in a $7,500 tax credit.',
+    cta: 'Reserve yours',
+    bg: 'bg-gradient-to-br from-emerald-700 to-black',
+    fg: 'text-white',
+    accent: 'bg-emerald-400 text-black',
+  },
+  {
+    advertiser: 'Georgetown Books',
+    headline: 'Fall reading: 30% off all Pulitzer winners',
+    body: 'In store & online. Free shipping on orders over $35.',
+    cta: 'Shop now',
+    bg: 'bg-amber-50',
+    fg: 'text-wp-black',
+    accent: 'bg-wp-red text-white',
+  },
+  {
+    advertiser: 'MetroMobile',
+    headline: 'Unlimited 5G for $25/mo — keep your phone',
+    body: 'No contracts. No fine print. On the nation\u2019s fastest network.',
+    cta: 'Switch today',
+    bg: 'bg-purple-900',
+    fg: 'text-white',
+    accent: 'bg-pink-400 text-black',
+  },
+  {
+    advertiser: 'WashPo Live',
+    headline: 'Post Live: Inside the shutdown with our reporters',
+    body: 'Wednesday at 7 p.m. ET — subscribers get priority questions.',
+    cta: 'RSVP free',
+    bg: 'bg-wp-black',
+    fg: 'text-white',
+    accent: 'bg-wp-red text-white',
+  },
+] as const;
 
 /**
  * Placeholder ad unit.
@@ -34,6 +95,16 @@ export default function AdSlot({
   const [visible, setVisible] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  // Pick a random creative per mount, keyed by slot name, then rotate every 45s.
+  const [creativeIdx, setCreativeIdx] = useState<number>(() => Math.floor(Math.random() * FAKE_CREATIVES.length));
+  const creative = FAKE_CREATIVES[creativeIdx];
+  useEffect(() => {
+    if (blocked) return;
+    const id = setInterval(() => {
+      setCreativeIdx((i) => (i + 1) % FAKE_CREATIVES.length);
+    }, 45000);
+    return () => clearInterval(id);
+  }, [blocked]);
 
   // Sizes per slot
   const size = (() => {
@@ -142,11 +213,36 @@ export default function AdSlot({
           <div className="text-[11px] font-sans text-wp-gray animate-pulse">Loading ad…</div>
         )}
         {visible && !blocked && loaded && (
-          <div className="text-center px-4">
-            <p className="font-display font-black text-4xl text-wp-gray/40 leading-none mb-1">Ad</p>
-            <p className="text-[11px] font-sans text-wp-gray">{size.label}</p>
-            <p className="text-[10px] font-sans text-wp-gray/70 mt-1">Demo placeholder</p>
-          </div>
+            <Link
+              href="/subscribe"
+              className={`block w-full h-full ${creative.bg} ${creative.fg} p-3 md:p-4 flex flex-col justify-between overflow-hidden relative group`}
+              aria-label={`${creative.advertiser} advertisement`}
+            >
+            <div className="flex items-baseline justify-between mb-2">
+              <span className="text-[9px] font-sans uppercase tracking-widest opacity-75">
+                {creative.advertiser}
+              </span>
+              <span className="text-[9px] font-sans uppercase tracking-widest opacity-50">
+                Sponsored
+              </span>
+            </div>
+            <div className="flex-1 flex flex-col justify-center">
+              <p className={
+                'font-display font-black leading-[1.05] mb-2 ' +
+                (slot === 'top-banner' ? 'text-lg md:text-2xl' : 'text-lg md:text-xl')
+              }>
+                {creative.headline}
+              </p>
+              <p className={'font-serif text-[12px] md:text-sm leading-snug opacity-90 mb-3 ' + (slot === 'top-banner' ? 'line-clamp-1' : '')}>
+                {creative.body}
+              </p>
+            </div>
+            <div>
+              <span className={`inline-block px-3 py-1.5 text-[10px] md:text-xs font-sans font-bold uppercase tracking-wider ${creative.accent} group-hover:underline`}>
+                {creative.cta} →
+              </span>
+            </div>
+          </Link>
         )}
         {visible && blocked && (
           <div className="p-5 text-center w-full bg-wp-light">
@@ -155,12 +251,12 @@ export default function AdSlot({
               We noticed you&apos;re using an ad blocker. Consider subscribing to
               support independent journalism.
             </p>
-            <a
-              href="#subscribe"
+            <Link
+              href="/subscribe"
               className="inline-block bg-wp-black text-white px-4 py-2 text-[11px] font-sans font-bold uppercase tracking-wider hover:bg-wp-red transition tap-target"
             >
               Subscribe
-            </a>
+            </Link>
           </div>
         )}
       </div>

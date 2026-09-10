@@ -23,13 +23,19 @@ import Link from 'next/link';
 import { parseBylineNames } from '@/lib/data';
 import AdSlot from '@/components/AdSlot';
 import { getMdxArticle } from '@/lib/mdx';
+import { fetchArticleBySlug } from '@/lib/cms';
 import { inferTopics } from '@/lib/topics';
 
 export const dynamicParams = true;
 
 async function resolveArticle(slug: string) {
+  // 1. Local MDX content
   const mdx = await getMdxArticle(slug).catch(() => null);
   if (mdx) return { article: mdx as any, Content: mdx.Content, isMdx: true as const };
+  // 2. Sanity CMS (when configured); falls back gracefully
+  const cms = await fetchArticleBySlug(slug).catch(() => null);
+  if (cms) return { article: cms as any, Content: null as null, isMdx: false as const };
+  // 3. Static fallback dataset
   const legacy = getArticleBySlug(slug);
   if (!legacy) return null;
   return { article: legacy as any, Content: null as null, isMdx: false as const };

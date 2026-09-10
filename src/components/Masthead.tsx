@@ -5,11 +5,14 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import SearchBar from './SearchBar';
-import { UserIcon, MenuIcon } from './Icons';
+import { UserIcon, MenuIcon, BookmarkIcon } from './Icons';
 import LiveTicker from './LiveTicker';
 import SkipLink from './SkipLink';
 import ThemeToggle from './ThemeToggle';
 import SubscriberMeter from './SubscriberMeter';
+import BreakingBanner from './BreakingBanner';
+import TopBarWeather from './TopBarWeather';
+import EditionSwitcher from './EditionSwitcher';
 
 export default function Masthead() {
   const today = new Date().toLocaleDateString('en-US', {
@@ -27,13 +30,14 @@ export default function Masthead() {
   return (
     <>
       <SkipLink />
+      <BreakingBanner />
       <header className="bg-wp-cream sticky top-0 z-40 shadow-sm" role="banner" style={{ paddingTop: 'var(--sat)' }}>
       {/* Breaking / live ticker — runs ACROSS THE TOP above everything, like WaPo's real red live bar */}
       <LiveTicker />
       {/* Top utility bar */}
       <div className="border-b border-wp-border">
-        <div className="wp-container py-1.5 md:py-2 flex items-center justify-between text-xs font-sans text-wp-gray">
-          <div className="flex items-center gap-2 min-w-0">
+        <div className="wp-container py-1 md:py-1.5 flex items-center justify-between text-xs font-sans text-wp-gray">
+          <div className="flex items-center gap-1 md:gap-2 min-w-0">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="md:hidden flex items-center justify-center w-10 h-10 -ml-2 font-bold uppercase tracking-wider text-wp-black tap-target"
@@ -42,11 +46,13 @@ export default function Masthead() {
             >
               <MenuIcon className="w-5 h-5" />
             </button>
-            <span className="hidden sm:inline truncate">{today}</span>
+            <span className="hidden sm:inline truncate text-[11px]">{today}</span>
+            <TopBarWeather />
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
-            <a href="#newsletter" className="hidden sm:inline px-2 py-1 hover:text-wp-red text-[11px]">Today&apos;s Paper</a>
             <Link href="/newsletters" className="hidden md:inline px-2 py-1 hover:text-wp-red text-[11px]">Newsletters</Link>
+            <Link href="/editorial" className="hidden md:inline px-2 py-1 text-[11px] font-bold uppercase tracking-widest text-wp-red hover:bg-wp-red hover:text-white transition" title="Editorial CMS — staff only">Newsroom</Link>
+            <EditionSwitcher />
             <SearchBar />
             <SubscriberMeter />
             {status === 'authenticated' && session?.user ? (
@@ -77,6 +83,8 @@ export default function Masthead() {
                       <li><Link href="/account" onClick={() => setAcctOpen(false)} className="block px-4 py-2 hover:bg-wp-light">Your account</Link></li>
                       <li><Link href="/account#saved" onClick={() => setAcctOpen(false)} className="block px-4 py-2 hover:bg-wp-light">Saved stories</Link></li>
                       <li><Link href="/newsletters" onClick={() => setAcctOpen(false)} className="block px-4 py-2 hover:bg-wp-light">Newsletters</Link></li>
+                      <li className="border-t border-wp-border my-1" />
+                      <li><Link href="/editorial" onClick={() => setAcctOpen(false)} className="block px-4 py-2 hover:bg-wp-light text-wp-red font-bold uppercase text-[11px] tracking-widest">Newsroom CMS</Link></li>
                       <li>
                         <button
                           onMouseDown={(e) => { e.preventDefault(); signOut({ callbackUrl: '/' }); }}
@@ -98,6 +106,14 @@ export default function Masthead() {
                 <UserIcon className="w-[18px] h-[18px]" />
               </Link>
             )}
+            <Link
+              href="/bookmarks"
+              className="hidden sm:flex w-10 h-10 items-center justify-center hover:bg-wp-light text-wp-black hover:text-wp-red transition tap-target"
+              aria-label="Saved stories"
+              title="Saved for later"
+            >
+              <BookmarkIcon className="w-[18px] h-[18px]" />
+            </Link>
             <ThemeToggle />
             <Link
               href="/subscribe"
@@ -174,11 +190,18 @@ export default function Masthead() {
                 </a>
               </li>
             ))}
-            <li className="pt-4">
+            <li className="pt-4 grid grid-cols-2 gap-2">
+              <Link
+                href="/bookmarks"
+                onClick={closeMenu}
+                className="text-center border-2 border-wp-black py-3 font-sans font-bold uppercase tracking-wider text-sm"
+              >
+                Saved
+              </Link>
               <Link
                 href="/subscribe"
                 onClick={closeMenu}
-                className="block text-center bg-wp-black text-white py-3 font-sans font-bold uppercase tracking-wider text-sm"
+                className="text-center bg-wp-black text-white py-3 font-sans font-bold uppercase tracking-wider text-sm"
               >
                 Subscribe
               </Link>

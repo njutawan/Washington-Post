@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { usePaywall } from '@/lib/usePaywall';
+import FocusTrap from './FocusTrap';
 
 type PlanId = 'digital' | 'allaccess' | 'student' | 'gift';
 
@@ -42,12 +43,13 @@ export default function PaywallModal({ open, onClose }: { open: boolean; onClose
       aria-modal="true"
       aria-labelledby="paywall-title"
     >
-      <div
-        className={
-          'bg-wp-cream w-full max-w-3xl border-t-4 border-wp-black md:border-2 md:border-wp-black shadow-2xl transition-all duration-300 overflow-y-auto max-h-[95vh] ' +
-          (mounted ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0')
-        }
-      >
+      <FocusTrap active={open} onClose={onClose}>
+        <div
+          className={
+            'bg-wp-cream w-full max-w-3xl border-t-4 border-wp-black md:border-2 md:border-wp-black shadow-2xl transition-all duration-300 overflow-y-auto max-h-[95vh] ' +
+            (mounted ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0')
+          }
+        >
         <div className="p-6 md:p-8">
           <div className="text-[11px] font-sans uppercase tracking-[0.3em] text-wp-gray mb-3 text-center">
             Democracy Dies in Darkness
@@ -149,6 +151,7 @@ export default function PaywallModal({ open, onClose }: { open: boolean; onClose
           </div>
         </div>
       </div>
+      </FocusTrap>
     </div>
   );
 }

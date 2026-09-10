@@ -590,3 +590,9 @@ body.no-scroll {
   .animate-pulse-slow,
   .animate-slide-in { animation: none !important; }
 }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+.animate-fadeUp { animation: fadeUp 0.25s ease-out; }

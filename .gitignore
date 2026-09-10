@@ -12,3 +12,6 @@ tsconfig.tsbuildinfo
 npm-debug.log*
 nohup.out
 /tmp/
+
+# Editorial CMS runtime data (auto-seeded)
+.editorial-data/

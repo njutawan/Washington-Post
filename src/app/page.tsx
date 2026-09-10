@@ -19,6 +19,7 @@ import {
   styleArts,
   wellbeing,
 } from '@/lib/data';
+import { fetchArticles, isSanityConfigured } from '@/lib/cms';
 
 const essayPhotos = [
   { src: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&q=80', caption: 'Capitol Hill at dusk as lawmakers raced to beat the shutdown deadline.', credit: 'Jabin Botsford for The Washington Post' },
