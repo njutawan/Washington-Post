@@ -61,24 +61,71 @@ export function siteMetadata(): Metadata {
   };
 }
 
-export function articleMetadata(article: Article): Metadata {
+export function videoMetadata(
+  video: { title: string; description?: string; slug: string; thumbnail?: string; duration?: number }
+): Metadata {
+  const url = absoluteUrl(`/video/${video.slug}`);
+  const image = video.thumbnail || DEFAULT_OG_IMAGE;
+  return {
+    title: video.title,
+    description: video.description,
+    alternates: { canonical: `/video/${video.slug}` },
+    openGraph: {
+      type: 'video.other',
+      url,
+      title: video.title,
+      description: video.description,
+      images: [{ url: image, width: 1280, height: 720, alt: video.title }],
+      siteName: SITE_NAME,
+      videos: [{
+        url,
+        width: 1280,
+        height: 720,
+        type: 'video/mp4',
+      }],
+    },
+    twitter: {
+      card: 'player',
+      title: video.title,
+      description: video.description,
+      images: [image],
+      players: [{
+        playerUrl: url,
+        streamUrl: url,
+        width: 1280,
+        height: 720,
+      }],
+    },
+  };
+}
+
+export function articleMetadata(article: Article, authorList: Author[] = []): Metadata {
   const url = absoluteUrl(`/article/${article.slug}`);
   const image = article.image || DEFAULT_OG_IMAGE;
   const headline = article.title;
   const description = article.dek || `${article.byline || ''} — Read more at ${SITE_NAME}.`;
+  const tags: string[] = Array.from(new Set([
+    article.category, article.kicker, article.categorySlug,
+    'breaking news', 'Washington Post',
+  ].filter(Boolean) as string[]));
+  // Build author profile URLs array for OG article:author (must be URLs, not strings)
+  const authorUrls = authorList
+    .map((a) => absoluteUrl(`/author/${a.slug}`));
   return {
     title: headline,
     description,
+    keywords: tags,
     alternates: { canonical: `/article/${article.slug}` },
     openGraph: {
       type: 'article',
       url,
       title: headline,
       description,
-      publishedTime: new Date().toISOString(),
+      publishedTime: article.time ? undefined : new Date().toISOString(),
       modifiedTime: new Date().toISOString(),
       section: article.category,
-      authors: article.byline ? [article.byline.replace(/^By\s+/, '')] : undefined,
+      tags: tags,
+      authors: authorUrls.length > 0 ? authorUrls : undefined,
       images: [{ url: image, width: 1400, height: 900, alt: headline }],
       siteName: SITE_NAME,
     },
@@ -87,6 +134,12 @@ export function articleMetadata(article: Article): Metadata {
       title: headline,
       description,
       images: [image],
+    },
+    other: {
+      'news_keywords': tags.slice(0, 10).join(','),
+      'article:published_time': new Date().toISOString(),
+      'article:section': article.category || '',
+      'amphtml': absoluteUrl(`/article/${article.slug}?amp=1`),
     },
   };
 }

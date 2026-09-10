@@ -30,6 +30,9 @@ export default function LiveBlogPageClient({
     <div className="min-h-screen bg-wp-cream">
       <Masthead />
       <main id="main-content" className="wp-container py-6">
+        <div role="status" aria-live="polite" aria-atomic="true" className="sr-only" id="live-aria-status">
+          {pendingCount > 0 ? `${pendingCount} new update${pendingCount === 1 ? '' : 's'} available. Press the button to load them.` : connected ? 'Live feed connected.' : 'Connecting to live updates.'}
+        </div>
         <Breadcrumbs items={[{ label: 'Politics', href: '/politics' }, { label: 'Live Updates' }]} />
 
         <div className="grid lg:grid-cols-3 gap-8">

@@ -15,6 +15,7 @@ import RouteLoadingBar from '@/components/RouteLoadingBar';
 import { PodcastProvider } from '@/components/PodcastProvider';
 import PodcastMiniPlayer from '@/components/PodcastMiniPlayer';
 import GateInterceptor from '@/components/GateInterceptor';
+import Toaster from '@/components/Toaster';
 // Font CSS variables (--font-sans / --font-serif / --font-display) are
 // declared in :root in globals.css, so we don't need a class here.
 
@@ -69,6 +70,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 {children}
                 <PodcastMiniPlayer />
                 <GateInterceptor />
+                <Toaster />
               </ReadingProvider>
             </PodcastProvider>
           </PaywallProvider>
