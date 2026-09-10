@@ -14,10 +14,22 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 const DEMO_ENABLED =
   process.env.NEXT_PUBLIC_ENABLE_DEMO === '1' || process.env.NODE_ENV !== 'production';
 
+/**
+ * Open-redirect guard (CWE-601): only accept same-origin relative paths.
+ * `router.replace('https://evil.com')` performs a full navigation, so an
+ * attacker-crafted `?callbackUrl=https://evil.com/phish` would bounce a
+ * victim to the attacker's site right after sign-in. Absolute URLs and
+ * protocol-relative (`//evil.com`) values are rejected.
+ */
+function safeCallbackUrl(raw: string | null): string {
+  if (typeof raw === 'string' && raw.startsWith('/') && !raw.startsWith('//')) return raw;
+  return '/';
+}
+
 export default function SignInPage() {
   const router = useRouter();
   const params = useSearchParams();
-  const callbackUrl = params.get('callbackUrl') || '/';
+  const callbackUrl = safeCallbackUrl(params.get('callbackUrl'));
   const { status } = useSession();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');

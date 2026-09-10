@@ -60,17 +60,36 @@ if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
   clerkPromise = loadClerk().catch((): null => null);
 }
 
+/**
+ * Signed-in pages embed the session (name, email, bookmarks) in the RSC
+ * flight payload inline in the HTML. Never let proxies or the service
+ * worker cache personalized HTML (CWE-200 — shared-device exposure).
+ * The session cookies are HttpOnly, so their mere presence is a reliable
+ * "logged in" signal without validating a JWT here.
+ */
+function markNoStoreIfSignedIn(req: NextRequest, res: Response): Response {
+  if (
+    res instanceof NextResponse &&
+    (req.cookies.has('authjs.session-token') || req.cookies.has('__session'))
+  ) {
+    res.headers.set('Cache-Control', 'private, no-store');
+  }
+  return res;
+}
+
 export async function middleware(req: NextRequest) {
   if (clerkPromise) {
     try {
       const mw = await clerkPromise;
-      if (mw) return await mw(req);
+      if (mw) {
+        return markNoStoreIfSignedIn(req, await mw(req));
+      }
     } catch {
       // Never take the site down because of middleware trouble.
-      return NextResponse.next();
+      return markNoStoreIfSignedIn(req, NextResponse.next());
     }
   }
-  return NextResponse.next();
+  return markNoStoreIfSignedIn(req, NextResponse.next());
 }
 
 export const config = {

@@ -1,8 +1,8 @@
 /* eslint-disable */
-/* Service Worker v3 — offline caching + push notifications + background sync */
-const CACHE_VERSION = 'wapo-v3';
-const STATIC_CACHE = 'wapo-static-v3';
-const PAGES_CACHE = 'wapo-pages-v3';
+/* Service Worker v4 — offline caching + push notifications + background sync */
+const CACHE_VERSION = 'wapo-v4';
+const STATIC_CACHE = 'wapo-static-v4';
+const PAGES_CACHE = 'wapo-pages-v4';
 const PRECACHE_URLS = ['/', '/offline', '/politics', '/opinions', '/newsletters'];
 const OFFLINE_QUEUE = 'wapo-offline-queue';
 const BG_SYNC_TAG = 'wapo-bg-sync';
@@ -129,12 +129,25 @@ async function replayOfflineQueue() {
 }
 
 /**
+ * Privacy guard: never cache responses the server marked private.
+ * Signed-in pages embed the session in the HTML (RSC payload), so the
+ * server sends `Cache-Control: private, no-store` on them — caching such a
+ * page would leak the previous user's data on shared devices (CWE-200).
+ */
+function isCacheable(res) {
+  if (!res || res.status !== 200) return false;
+  const cc = (res.headers.get('cache-control') || '').toLowerCase();
+  return !cc.includes('no-store') && !cc.includes('private');
+}
+
+/**
  * Keep the page cache bounded: drop the oldest entries beyond the cap.
  * Cache.keys() is returned in insertion order by browsers, so evicting from
  * the front is a good-enough LRU for offline navigation. Always keep the
  * offline fallback page.
  */
 async function putPage(request, res) {
+  if (!isCacheable(res)) return;
   try {
     const cache = await caches.open(PAGES_CACHE);
     await cache.put(request, res.clone());
@@ -203,12 +216,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // GET API (non-mutating, non-SSE): network-first with cache fallback
+  // GET API (non-mutating, non-SSE): network-first with cache fallback.
+  // Personalized responses (signed-in / no-store) are never cached.
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request)
         .then((res) => {
-          if (res && res.status === 200) {
+          if (isCacheable(res)) {
             const resClone = res.clone();
             caches.open(STATIC_CACHE).then((cache) => cache.put(request, resClone));
           }
