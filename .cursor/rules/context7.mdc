@@ -1,0 +1,18 @@
+---
+description: Selalu gunakan Context7 untuk dokumentasi library yang up-to-date
+alwaysApply: true
+---
+
+# Aturan Context7
+
+Repository ini sudah dikonfigurasi dengan Context7 MCP (lihat `.cursor/mcp.json`).
+
+Always use Context7 when I need library/API documentation, code generation,
+setup or configuration steps without me having to explicitly ask.
+
+- Pakai `use context7` di prompt untuk memaksa.
+- Pakai library ID langsung bila sudah diketahui, mis. `use library /vercel/next.js`.
+- Stack utama proyek: Next.js 15 App Router, React 18, Tailwind CSS 3,
+  NextAuth v5, Sentry, Vitest — selalu ambil dokumentasi versi yang sesuai.
+
+Detail: `docs/context7.md`.
