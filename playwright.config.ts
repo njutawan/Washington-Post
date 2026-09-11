@@ -9,7 +9,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  // In CI also emit the GitHub reporter: every failed test becomes a check
+  // annotation on the PR, so the exact failing spec/assertion is visible in
+  // the Checks tab without downloading the HTML report artifact. Locally the
+  // HTML report stays the single output.
+  reporter: process.env.CI ? [['github'], ['html']] : 'html',
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
