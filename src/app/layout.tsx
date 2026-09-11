@@ -37,8 +37,7 @@ const ClerkWrap: React.FC<{ children: React.ReactNode }> = clerkKey
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await nextAuth();
   return (
-    <ClerkWrap>
-      <html lang="en">
+    <html lang="en">
         <head>
         <link rel="manifest" href="/site.webmanifest" />
         <meta name="theme-color" content="#121212" />
@@ -66,6 +65,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="alternate" type="application/rss+xml" title="The Washington Post — RSS Feed" href="/api/feed" />
       </head>
       <body className="antialiased pt-1 pb-16 md:pb-14">
+        {/* ClerkProvider must live INSIDE <body>, not wrap <html> — Clerk mounts
+            its client SDK against the app tree, and wrapping the document element
+            breaks hydration of <head>-level metadata. */}
+        <ClerkWrap>
         <SessionProvider session={session}>
           <PaywallProvider>
             <PodcastProvider>
@@ -79,13 +82,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </PodcastProvider>
           </PaywallProvider>
         </SessionProvider>
+        </ClerkWrap>
         <TopLoader />
         <RouteLoadingBar />
         <PageTransitions />
         <PWAInit />
         <Analytics />
       </body>
-      </html>
-    </ClerkWrap>
+    </html>
   );
 }

@@ -97,5 +97,8 @@ export const config = {
   matcher: [
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     '/(api|trpc)(.*)',
+    // Clerk's auto-proxy path. Must stay after the API/TRPC matcher so Clerk's
+    // internal RPC routes are always handled by clerkMiddleware().
+    '/__clerk/:path*',
   ],
 };

@@ -17,6 +17,14 @@ const _rah = rehypeAutolinkHeadings.default || rehypeAutolinkHeadings;
 const nextConfig = {
   pageExtensions: ['ts', 'tsx', 'js', 'jsx', 'md', 'mdx'],
   images: {
+    /**
+     * Dev-only: skip the server-side optimizer. When the dev server runs in an
+     * environment with no outbound network (CI sandboxes, agent workspaces),
+     * `/_next/image` cannot fetch remote hosts and 500s on every remote photo.
+     * Letting the browser load the source URL directly keeps images working,
+     * while production builds keep full optimization.
+     */
+    unoptimized: process.env.NODE_ENV !== 'production',
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'picsum.photos' },
@@ -58,13 +66,18 @@ const nextConfig = {
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.accounts.dev",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://images.unsplash.com https://picsum.photos https://loremflickr.com https://i.ytimg.com https://pbs.twimg.com",
+      // img.clerk.com serves user avatars; instance domains serve them too when
+      // a custom frontend API is in play. Without these the CSP silently kills
+      // every avatar in <UserButton/> / <Show when="signed-in">.
+      "img-src 'self' data: blob: https://images.unsplash.com https://picsum.photos https://loremflickr.com https://i.ytimg.com https://pbs.twimg.com https://img.clerk.com https://*.clerk.com https://*.clerk.accounts.dev",
       "font-src 'self' data:",
       "media-src 'self' https://www.soundhelix.com",
-      `connect-src 'self' https://www.soundhelix.com https://*.ingest.sentry.io https://*.clerk.com https://*.clerk.accounts.dev${
+      // wss:// is required for Clerk's realtime session syncing — an https://
+      // source does NOT match a websocket handshake, so sessions would go stale.
+      `connect-src 'self' https://www.soundhelix.com https://*.ingest.sentry.io https://*.clerk.com https://*.clerk.accounts.dev wss://*.clerk.com wss://*.clerk.accounts.dev${
         process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN ? ` https://${process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN}` : ''
       }`,
-      "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.youtube.com https://platform.twitter.com",
+      "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.youtube.com https://platform.twitter.com https://*.clerk.com https://*.clerk.accounts.dev",
       "worker-src 'self'",
       "object-src 'none'",
       "base-uri 'self'",
