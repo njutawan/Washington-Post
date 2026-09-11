@@ -14,6 +14,10 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 const DEMO_ENABLED =
   process.env.NEXT_PUBLIC_ENABLE_DEMO === '1' || process.env.NODE_ENV !== 'production';
 
+// When Clerk is configured it owns authentication, so the legacy form hands off
+// to Clerk's route instead of showing a second, competing sign-in surface.
+const CLERK_ENABLED = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+
 /**
  * Open-redirect guard (CWE-601): only accept same-origin relative paths.
  * `router.replace('https://evil.com')` performs a full navigation, so an
@@ -42,6 +46,12 @@ export default function SignInPage() {
   // effect — calling router.replace during render is a React anti-pattern
   // (and triggers the "update during render" warning).
   useEffect(() => {
+    // Clerk configured → this legacy page is a pass-through, not a second form.
+    if (CLERK_ENABLED) {
+      const q = callbackUrl && callbackUrl !== '/' ? `?redirect_url=${encodeURIComponent(callbackUrl)}` : '';
+      router.replace(`/sign-in${q}`);
+      return;
+    }
     if (status === 'authenticated') router.replace(callbackUrl);
   }, [status, callbackUrl, router]);
 
