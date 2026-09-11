@@ -25,12 +25,17 @@ export async function GET() {
 
   const items = articles.map((a) => {
     const link = absoluteUrl(`/article/${a.slug}`);
-    const desc = (a.dek ? a.dek + ' ' : '') + (a.image ? `<img src="${a.image}" alt="" /><br/>` : '');
+    // Escape the text FIRST, then append the <img> tag — escaping the whole
+    // string would turn the intentionally-injected tag into literal text
+    // (`&lt;img …&gt;`) in RSS readers. `a.image` comes from in-repo data
+    // (trusted), not user input.
+    const text = escapeXml(a.dek || '');
+    const desc = (text ? `${text} ` : '') + (a.image ? `<img src="${a.image}" alt="" /><br/>` : '');
     return `    <item>
       <title>${escapeXml(a.title)}</title>
       <link>${link}</link>
       <guid isPermaLink="true">${link}</guid>
-      <description>${escapeXml(desc)}</description>
+      <description>${desc}</description>
       ${a.byline ? `<author>noreply@washingtonpost-clone.example.com (${escapeXml(a.byline.replace(/^By\s+/, ''))})</author>` : ''}
       ${a.category ? `<category>${escapeXml(a.category)}</category>` : ''}
       <pubDate>${now}</pubDate>

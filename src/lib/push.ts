@@ -38,11 +38,67 @@ type StoredSub = {
 };
 const subs = new Map<string, StoredSub>();
 
+/**
+ * SSRF guard (CWE-918): `web-push` will HTTP-POST to whatever URL is stored
+ * as the subscription endpoint. An attacker who can register a subscription
+ * (the endpoint is public) could point it at an internal address
+ * (e.g. http://169.254.169.254/ for cloud metadata, or http://127.0.0.1:3000)
+ * and have the server issue the request when a push is sent. We only accept
+ * https endpoints on known public push-service hosts.
+ */
+const ALLOWED_PUSH_HOSTS = new Set([
+  'fcm.googleapis.com',
+  'push.services.mozilla.com',
+]);
+
+export function isValidPushEndpoint(endpoint: unknown): boolean {
+  if (typeof endpoint !== 'string') return false;
+  let u: URL;
+  try {
+    u = new URL(endpoint);
+  } catch {
+    return false;
+  }
+  if (u.protocol !== 'https:') return false;
+  const host = u.hostname.toLowerCase();
+  return (
+    ALLOWED_PUSH_HOSTS.has(host) ||
+    [...ALLOWED_PUSH_HOSTS].some((h) => host.endsWith(`.${h}`))
+  );
+}
+
+/**
+ * Hard cap on stored subscriptions. The store is in-memory (demo) and fed by
+ * a public endpoint — without a cap an attacker could grow the process's
+ * memory by POSTing unique endpoint strings forever. When full we evict the
+ * oldest subscriptions first.
+ */
+const MAX_SUBSCRIPTIONS = 10_000;
+
+function evictOldestIfNeeded() {
+  while (subs.size >= MAX_SUBSCRIPTIONS) {
+    let oldestKey: string | null = null;
+    let oldestAt = Infinity;
+    for (const [key, s] of subs) {
+      if (s.addedAt < oldestAt) {
+        oldestAt = s.addedAt;
+        oldestKey = key;
+      }
+    }
+    if (oldestKey === null) break;
+    subs.delete(oldestKey);
+  }
+}
+
 export function addSubscription(
   subscription: WebPushSubscription,
   opts: { topics?: string[]; userAgent?: string } = {},
 ) {
   if (!subscription?.endpoint) return false;
+  // SSRF guard — reject endpoints that aren't a known public push service.
+  if (!isValidPushEndpoint(subscription.endpoint)) return false;
+  const isNew = !subs.has(subscription.endpoint);
+  if (isNew) evictOldestIfNeeded();
   const existing = subs.get(subscription.endpoint);
   subs.set(subscription.endpoint, {
     sub: subscription,

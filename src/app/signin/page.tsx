@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -8,10 +8,28 @@ import Masthead from '@/components/Masthead';
 import Footer from '@/components/Footer';
 import Breadcrumbs from '@/components/Breadcrumbs';
 
+// Mirrors the condition in src/auth.ts that decides whether the no-credential
+// "demo" provider is registered — so the button and the provider can never
+// disagree (disabled in production unless NEXT_PUBLIC_ENABLE_DEMO=1).
+const DEMO_ENABLED =
+  process.env.NEXT_PUBLIC_ENABLE_DEMO === '1' || process.env.NODE_ENV !== 'production';
+
+/**
+ * Open-redirect guard (CWE-601): only accept same-origin relative paths.
+ * `router.replace('https://evil.com')` performs a full navigation, so an
+ * attacker-crafted `?callbackUrl=https://evil.com/phish` would bounce a
+ * victim to the attacker's site right after sign-in. Absolute URLs and
+ * protocol-relative (`//evil.com`) values are rejected.
+ */
+function safeCallbackUrl(raw: string | null): string {
+  if (typeof raw === 'string' && raw.startsWith('/') && !raw.startsWith('//')) return raw;
+  return '/';
+}
+
 export default function SignInPage() {
   const router = useRouter();
   const params = useSearchParams();
-  const callbackUrl = params.get('callbackUrl') || '/';
+  const callbackUrl = safeCallbackUrl(params.get('callbackUrl'));
   const { status } = useSession();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -20,9 +38,12 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  if (status === 'authenticated') {
-    router.replace(callbackUrl);
-  }
+  // Already authenticated? Bounce to the callback URL. This must happen in an
+  // effect — calling router.replace during render is a React anti-pattern
+  // (and triggers the "update during render" warning).
+  useEffect(() => {
+    if (status === 'authenticated') router.replace(callbackUrl);
+  }, [status, callbackUrl, router]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +99,7 @@ export default function SignInPage() {
 
           {/* OAuth / Demo */}
           <div className="space-y-2 mb-6">
-            {process.env.NODE_ENV !== 'production' || true ? (
+            {DEMO_ENABLED ? (
               <button
                 onClick={signInDemo}
                 className="w-full py-3 bg-wp-red text-white font-sans font-bold uppercase tracking-wider text-sm hover:bg-wp-black transition"

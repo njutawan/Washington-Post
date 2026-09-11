@@ -48,12 +48,9 @@
     "@axe-core/playwright": "^4.13.0",
     "@chromatic-com/storybook": "^5.3.1",
     "@playwright/test": "^1.63.0",
-    "@storybook/addon-a11y": "^8.6.18",
-    "@storybook/addon-essentials": "^8.6.14",
-    "@storybook/addon-interactions": "^8.6.14",
-    "@storybook/addon-links": "^8.6.18",
-    "@storybook/nextjs": "^8.6.18",
-    "@storybook/test": "^8.6.18",
+    "@storybook/addon-a11y": "^10.6.0",
+    "@storybook/addon-links": "^10.6.0",
+    "@storybook/nextjs": "^10.6.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
@@ -69,7 +66,7 @@
     "eslint-config-next": "15.5.25",
     "jsdom": "^30.0.1",
     "postcss": "^8.5.28",
-    "storybook": "^8.6.18",
+    "storybook": "^10.6.0",
     "tailwindcss": "^3.4.17",
     "typescript": "^5",
     "vite": "^8.2.2",
@@ -79,5 +76,8 @@
     "glob": "^10.4.20",
     "minimatch": "^9.0.9",
     "postcss": "^8.5.28"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

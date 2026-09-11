@@ -15,7 +15,7 @@
  */
 
 import { NextRequest } from 'next/server';
-import { getLiveUpdates, getUpdatesSince, subscribe, type LiveUpdate } from '@/lib/liveData';
+import { getLiveUpdates, getUpdatesSince, isValidLiveSlug, subscribe, type LiveUpdate } from '@/lib/liveData';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -33,9 +33,11 @@ export async function GET(req: NextRequest) {
   const poll = searchParams.get('poll') === '1';
   const since = sinceParam ? Number(sinceParam) : 0;
 
-  if (!slug) {
-    return new Response(JSON.stringify({ error: 'slug required' }), {
-      status: 400,
+  // Only known live-blog slugs are served — arbitrary slugs must not create
+  // store entries / simulation timers (see liveData.isValidLiveSlug).
+  if (!slug || !isValidLiveSlug(slug)) {
+    return new Response(JSON.stringify({ error: 'unknown live blog' }), {
+      status: 404,
       headers: { 'Content-Type': 'application/json' },
     });
   }

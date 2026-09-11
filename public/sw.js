@@ -1,11 +1,12 @@
 /* eslint-disable */
-/* Service Worker v2 — offline caching + push notifications + background sync */
-const CACHE_VERSION = 'wapo-v2';
-const STATIC_CACHE = 'wapo-static-v2';
-const PAGES_CACHE = 'wapo-pages-v2';
+/* Service Worker v4 — offline caching + push notifications + background sync */
+const CACHE_VERSION = 'wapo-v4';
+const STATIC_CACHE = 'wapo-static-v4';
+const PAGES_CACHE = 'wapo-pages-v4';
 const PRECACHE_URLS = ['/', '/offline', '/politics', '/opinions', '/newsletters'];
 const OFFLINE_QUEUE = 'wapo-offline-queue';
 const BG_SYNC_TAG = 'wapo-bg-sync';
+const MAX_CACHED_PAGES = 60; // bound the page cache so it can't grow forever
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -127,6 +128,40 @@ async function replayOfflineQueue() {
   return results;
 }
 
+/**
+ * Privacy guard: never cache responses the server marked private.
+ * Signed-in pages embed the session in the HTML (RSC payload), so the
+ * server sends `Cache-Control: private, no-store` on them — caching such a
+ * page would leak the previous user's data on shared devices (CWE-200).
+ */
+function isCacheable(res) {
+  if (!res || res.status !== 200) return false;
+  const cc = (res.headers.get('cache-control') || '').toLowerCase();
+  return !cc.includes('no-store') && !cc.includes('private');
+}
+
+/**
+ * Keep the page cache bounded: drop the oldest entries beyond the cap.
+ * Cache.keys() is returned in insertion order by browsers, so evicting from
+ * the front is a good-enough LRU for offline navigation. Always keep the
+ * offline fallback page.
+ */
+async function putPage(request, res) {
+  if (!isCacheable(res)) return;
+  try {
+    const cache = await caches.open(PAGES_CACHE);
+    await cache.put(request, res.clone());
+    const keys = await cache.keys();
+    const evictable = keys.filter((k) => new URL(k.url).pathname !== '/offline');
+    if (evictable.length > MAX_CACHED_PAGES) {
+      const toDelete = evictable.slice(0, evictable.length - MAX_CACHED_PAGES);
+      await Promise.all(toDelete.map((k) => cache.delete(k)));
+    }
+  } catch (e) {
+    /* cache is best-effort */
+  }
+}
+
 // ---------- Fetch handling ----------
 self.addEventListener('fetch', (event) => {
   const { request } = event;
@@ -170,8 +205,7 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .then((res) => {
           if (res && res.status === 200) {
-            const resClone = res.clone();
-            caches.open(PAGES_CACHE).then((cache) => cache.put(request, resClone));
+            putPage(request, res);
           }
           return res;
         })
@@ -182,12 +216,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // GET API (non-mutating, non-SSE): network-first with cache fallback
+  // GET API (non-mutating, non-SSE): network-first with cache fallback.
+  // Personalized responses (signed-in / no-store) are never cached.
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request)
         .then((res) => {
-          if (res && res.status === 200) {
+          if (isCacheable(res)) {
             const resClone = res.clone();
             caches.open(STATIC_CACHE).then((cache) => cache.put(request, resClone));
           }
