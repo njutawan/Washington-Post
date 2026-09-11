@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, arena/01a0821f-washington-post]
+    branches: [main, 'arena/**']
   pull_request:
     branches: [main]
 

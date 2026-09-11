@@ -1,171 +1,321 @@
-# The Washington Post — Clone
+<div align="center">
 
-A Washington Post-style news website built with **Next.js 15 (App Router)**, **React 18**, **TypeScript**, and **Tailwind CSS**. Designed to replicate the look, feel, and reading experience of a major newspaper while demonstrating a modern, production-ready front-end stack.
+# 📰 The Washington Post — Clone
 
-## ✨ Features
+### *“Democracy Dies in Darkness”*
 
-### Layout & Branding
-- Classic masthead with the iconic motto (*"Democracy Dies in Darkness"*)
-- Serif typography (Playfair Display / Merriweather / Source Serif Pro) for headlines and body
-- Cream "newsprint" background, red WaPo accent color (#b40001), double-rule section dividers
-- Fully responsive (mobile → desktop)
-- Custom `W` favicon
+**Clone pengalaman membaca koran digital kelas dunia — dibangun dengan stack modern yang production-ready.**
 
-### Pages
-- **Homepage** — lead story, "The 7" live-updates widget, section grids, photo strip
-- **Section pages** (`/politics`, `/sports`, `/world`, `/business`, `/tech`, `/style`, etc.) — each with its own hero, tagline, and layout
-- **Dedicated Opinions page** with columnist grid (round avatars), editorials block
-- **Article detail page** — drop cap, pull quote, byline block with share/save, related stories, comments
-- **Search** with fuzzy matching (Fuse.js)
-- **404** page in WaPo editorial style
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![CI](https://github.com/njutawan/Washington-Post/actions/workflows/ci.yml/badge.svg)](https://github.com/njutawan/Washington-Post/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/njutawan/Washington-Post?color=b40001)](https://github.com/njutawan/Washington-Post/releases)
+[![License: Demo](https://img.shields.io/badge/license-demo%20%2F%20educational-lightgrey)](#-disclaimer)
 
-### Interactivity
-- **Breaking news ticker** — CSS marquee, pauses on hover, respects reduced motion
-- **Live news** adapter for [NewsAPI.org](https://newsapi.org/) (with graceful fallback to curated local articles if no API key)
-- **Client-side fuzzy search** (Fuse.js) across titles, decks, categories, bylines
-- **Bookmarks/Save for later** — persisted in `localStorage`, visible in sidebar
-- **Comments section** (mock) — post new comments, reply, recommend, threaded
-- **Podcast player** ("Post Reports") — play/pause, progress bar, timer
-- **Weather widget for Washington, D.C.** — live data from Open-Meteo (free, no key) with fallback
-- **Newsletter signup** in footer and section sidebars (client-side state)
-- **"Load more"** pagination on section pages
-- **Skeleton loaders** for home, sections and article pages
-- **Command-K search modal** with trending terms
-- Mobile hamburger menu
+[🚀 Mulai Cepat](#-mulai-cepat) •
+[✨ Fitur Unggulan](#-fitur-unggulan) •
+[🖥️ Jelajahi Halaman](#️-jelajahi-halaman) •
+[📦 Rilis](https://github.com/njutawan/Washington-Post/releases) •
+[🗺️ Roadmap](#️-roadmap)
 
-### Premium features (WaPo-style)
-- **Metered paywall** — 3 free articles per month tracked in `localStorage`; after that a subscribe modal appears and the rest of the article is blurred. Progress meter visible above each story.
-- **The Mini Crossword** — fully interactive 5x5 mini puzzle on the Games page and embedded on the homepage, with keyboard navigation (arrows/space/backspace), check/reset, win detection, and numbered clues.
-- **Live blog template** (`/live/[slug]`) — reverse-chronological timeline with LIVE pulses, timestamps, and numbered updates.
-- **Photo essay with lightbox** — click any photo in "In Focus" for a full-screen viewer with keyboard prev/next (arrow keys, Esc to close).
-- **Video hero** — autoplay-on-click hero video player with poster, play/pause, mute toggle, headline overlay.
-- **"The 7" upgraded** — auto-advancing carousel (7s per story), progress bar per slide, pause on hover, pause button, left/right keyboard navigation, prev/next buttons.
-- **Newsletter center** (`/newsletters`) — multi-newsletter picker with email input, toggle per newsletter, subscribe count, and visual checkmarks.
+</div>
 
-## 🔧 Setup
+---
+
+## 📖 Tentang
+
+Replika tampilan, nuansa, dan pengalaman membaca **The Washington Post** — dari masthead klasik berkhas serif, ticker berita breaking, sampai paywall berlangganan — namun dengan **fitur setara produk berita modern**: CMS redaksi, akun pembaca, mode offline (PWA), notifikasi push, live blog, pencarian secepat kilat, hingga mini-games.
+
+> 🇬🇧 *A Washington Post-style digital newspaper experience — classic newsprint look on the outside, modern production-grade stack on the inside: editorial CMS, reader accounts, PWA offline mode, push notifications, live blogs, instant search, and games.*
+
+---
+
+## ✨ Fitur Unggulan
+
+| ⭐ Highlight | Deskripsi |
+|---|---|
+| 📰 **Pengalaman Koran Otentik** | Masthead klasik + motto, tipografi serif (Playfair Display / Source Serif), aksen merah WaPo `#b40001`, divider double-rule khas koran |
+| ✍️ **CMS Redaksi (`/editorial`)** | Dashboard Kanban 10 halaman: kelola stories (idea → published), assignments, moderasi komentar, liveblog, media, staff, analytics, alerts & settings + role-based access |
+| 🔐 **Auth Ganda + Akun Pembaca** | NextAuth (email/password, Google, Apple, **Demo 1-klik**) + Clerk — bookmark tersinkron, komentar persist, preferensi newsletter per-akun |
+| 💳 **Metered Paywall** | 3 artikel gratis/bulan (terlacak), blur artikel + modal subscribe, progress meter di tiap cerita |
+| 🔴 **Live Blog Real-Time** | Timeline reverse-chronological dengan pulse LIVE, timestamp, SSE live-updates + endpoint publish untuk redaksi |
+| 📱 **PWA + Mode Offline** | Service worker (3 strategi cache), halaman `/offline`, prompt install, bottom-nav ala aplikasi berita |
+| 🔔 **Push Notification** | Web Push API (subscribe/send/key) untuk breaking news |
+| 🎮 **Games Corner** | Mini Crossword 5×5 interaktif (keyboard nav, check/reset, win detection), Sudoku & Tiles |
+| 🎙️ **Podcast & Video** | Halaman podcast + RSS feed + mini-player persisten, video hero sinematik & halaman video |
+| 🔍 **Pencarian Instan** | Fuzzy search (Fuse.js, code-split −69% bundle) + modal Command-K dengan trending terms |
+| 🌓 **Dark Mode** | Tema gelap penuh yang lolos kontras WCAG AA, terverifikasi axe-core di kedua tema |
+| 🔊 **Read Aloud (TTS)** | Dengarkan artikel dibacakan via SpeechSynthesis API |
+| 📊 **Analytics Privat** | Kolektor lokal + dasbor `/analytics`, kompatibel Plausible — tanpa tracker invasif |
+
+---
+
+## 🧩 Fitur Lengkap
+
+<details>
+<summary><b>📰 Pembaca & Artikel</b></summary>
+
+- Homepage: lead story split, rail Top Stories, “The 7” carousel auto-advance (progress bar, pause, keyboard nav), opini, photo strip, clips video
+- Halaman section (`/politics`, `/sports`, `/world`, `/business`, `/tech`, `/style`, …) — hero, tagline & layout per kanal
+- Halaman artikel: drop cap, pull quote, byline + share/save, related stories, komentar threaded (post, balas, recommend)
+- Reading progress bar, daftar isi (TOC) dengan scroll-spy, scrollytelling, Recently Read rail, riwayat baca di akun
+- Halaman author, arsip bookmarks, Most Read, Election widget, Editorial cartoon, Breaking banner, Live ticker (marquee, pause on hover, hormat `prefers-reduced-motion`)
+- Photo essay + lightbox fullscreen (keyboard ←/→/Esc), “Load more” pagination, skeleton loader, 404 & error boundary bergaya editorial
+</details>
+
+<details>
+<summary><b>✍️ Redaksi / Editorial CMS</b> — <code>/editorial</code></summary>
+
+- 📊 Dashboard Kanban: pitched → assigned → drafting → in-edit → ready → published (+ spiked)
+- 📝 Stories: buat/edit (server actions), status & prioritas (breaking/urgent/routine)
+- 🗂️ Assignments, 💬 moderasi komentar (pending/flagged), 📡 liveblog publisher, 🖼️ media library
+- 👥 staff & roles, 🔔 alerts, 📈 analytics redaksi, ⚙️ settings — dengan proteksi role (`no-access` guard)
+</details>
+
+<details>
+<summary><b>🔐 Auth, Akun & Personalisasi</b></summary>
+
+- NextAuth 5: Credentials (salted SHA-256), Google & Apple OAuth, **Demo 1-klik** (tanpa setup env!)
+- Clerk (sign-in/sign-up catch-all routes) sebagai penyedia auth modern
+- `/account`: profil, saved stories tersinkron lintas-device, toggle newsletter auto-save, riwayat baca
+- API terproteksi via middleware: `/api/bookmarks`, `/api/comments`, `/api/newsletters`, `/api/me`
+- Newsletter center multi-pilihan + signup inline/footer, Edition switcher, widget cuaca D.C. (Open-Meteo, gratis tanpa key)
+</details>
+
+<details>
+<summary><b>🎙️ Multimedia: Video, Podcast, Live</b></summary>
+
+- Video: halaman indeks + detail, hero autoplay-on-click (play/pause/mute + headline overlay), clips grid dengan durasi
+- Podcast “Post Reports”: player (play/pause, progress, timer), provider + mini-player persisten, RSS feed di `/api/podcasts/rss`
+- Live blog template `/live/[slug]` + SSE `/api/live/updates` & publish endpoint bertoken
+- Breaking news ticker + banner, “New updates” badge
+</details>
+
+<details>
+<summary><b>🎮 Games</b> — <code>/games</code></summary>
+
+- Mini Crossword 5×5: navigasi keyboard penuh (panah/spasi/backspace), check/reset, deteksi menang, clue bernomor — juga tertanam di homepage
+- Sudoku & Tiles — promo bar Games + Newsletters di homepage
+</details>
+
+<details>
+<summary><b>📱 Mobile, PWA & Offline</b></summary>
+
+- Service worker: HTML → network-first (fallback cache → `/offline`), aset → stale-while-revalidate, API → network-only
+- Install prompt, Apple PWA meta, webmanifest + ikon adaptif, bottom navigation mobile (Home/Sections/Search/Saved/Subscribe)
+- Container responsif `.wp-container` (mobile → 2xl), sidebar muncul sejak tablet, touch target ≥44px, safe-area notch iPhone
+</details>
+
+<details>
+<summary><b>🔍 Search, SEO & Distribusi</b></summary>
+
+- Fuse.js fuzzy search (judul/dek/kategori/byline) + fallback substring saat chunk dimuat, halaman `/search`, Command-K modal
+- Metadata terpusat (`src/lib/seo.ts`): Open Graph, Twitter cards, canonical, robots
+- JSON-LD: `NewsMediaOrganization` + `WebSite` (+`SearchAction`), `NewsArticle` + `BreadcrumbList` per artikel
+- `sitemap.ts`, `robots.ts` dinamis (semua artikel & section), RSS 2.0 di `/api/feed` (+ feed per author), hero image preload untuk LCP
+</details>
+
+<details>
+<summary><b>⚡ Performa</b></summary>
+
+- `next/image` di semua gambar via wrapper `ArticleImage` (blur placeholder + shimmer, anti-CLS, format AVIF/WebP adaptif)
+- Font self-contained (tanpa request pihak ketiga), top-loader + view-transitions 280ms, code-split Fuse.js (search −69% JS)
+- 28+ halaman ter-prerender statis, zero third-party request saat first paint
+</details>
+
+<details>
+<summary><b>🧪 Testing & Kualitas</b></summary>
+
+- Vitest + jsdom + Testing Library (7 suite unit: data, SEO, analytics, db, live, push, reading)
+- Playwright: smoke, paywall, visual regression, aksesibilitas (axe-core)
+- Storybook + Chromatic visual review, TypeScript strict, ESLint `next/core-web-vitals`, `npm audit` gate di CI
+</details>
+
+<details>
+<summary><b>🔒 Keamanan & ♿ Aksesibilitas</b></summary>
+
+- Security headers + CSP produksi ketat (lihat `next.config.js`), token untuk endpoint dev-only, audit di `SECURITY_AUDIT.md` & `SECURITY_PENTEST_REPORT.md`, monitoring Sentry (client/edge/server)
+- Skip-to-content link, landmark ARIA, role/label di lightbox/carousel/paywall, `:focus-visible` ring, live regions, kontras AA — checklist di `docs/a11y-checklist.md`
+</details>
+
+---
+
+## 🖥️ Jelajahi Halaman
+
+Jalankan dev server, lalu buka:
+
+| Halaman | URL | Halaman | URL |
+|---|---|---|---|
+| 🏠 Homepage | `/` | ✍️ Editorial CMS | `/editorial` |
+| 📄 Artikel | `/article/<slug>` | 🔴 Live blog | `/live/shutdown-countdown` |
+| 🗂️ Section | `/politics` `/sports` … | 🎙️ Podcasts | `/podcasts` |
+| 💬 Opinions | `/opinions` | 🎬 Video | `/video` |
+| 🔍 Search (⌘K) | `/search` | 🎮 Games | `/games` |
+| 📬 Newsletters | `/newsletters` | 👤 Akun | `/account` |
+| 🔖 Tersimpan | `/bookmarks` | 💳 Subscribe | `/subscribe` |
+| 📊 Analytics | `/analytics` | ✈️ Mode offline | `/offline` |
+
+> 💡 **Tanpa API key pun situs tetap hidup** — otomatis fallback ke 45+ artikel MDX kurasi lokal (`content/articles/`) + adapter NewsAPI & Sanity yang opsional.
+
+---
+
+## 🚀 Mulai Cepat
 
 ```bash
+# 1. Clone & masuk ke repo
+git clone https://github.com/njutawan/Washington-Post.git
+cd Washington-Post
+
+# 2. Install & jalankan
 npm install
 npm run dev
 ```
 
-Open http://localhost:3000.
+Buka **http://localhost:3000** 🎉
 
-### Optional: Enable live NewsAPI headlines
+### ⚡ Coba akun demo (1 klik, tanpa setup)
 
-Copy `.env.example` to `.env.local` and add your [NewsAPI.org](https://newsapi.org/) key:
+1. Klik ikon 👤 di masthead → **Sign in**
+2. Klik tombol merah **Try the Demo Account (1-click)** — langsung masuk sebagai “Demo Reader”!
+3. Bookmark artikel 💾, posting komentar 💬, atur newsletter 📬, lalu lihat semuanya di `/account`
 
-```
-NEWS_API_KEY=your_key_here
-```
+---
 
-Without a key, the site uses built-in demo articles so it always renders.
+## ⚙️ Konfigurasi
 
-## 🧪 Scripts
+Salin `.env.example` → `.env.local`. Semua opsional — situs tetap jalan tanpa satupun key:
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start dev server |
-| `npm run build` | Production build |
-| `npm start` | Serve production build |
-| `npm run lint` | ESLint via Next.js |
+| Variabel | Fungsi | Wajib? |
+|---|---|---|
+| `NEWS_API_KEY` | Live headline dari [NewsAPI.org](https://newsapi.org/) | ❌ Opsional |
+| `NEXT_PUBLIC_SANITY_PROJECT_ID` / `NEXT_PUBLIC_SANITY_DATASET` | CMS Sanity (fallback ke konten lokal) | ❌ Opsional |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` | Auth modern via Clerk | ❌ Opsional |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Login Google (NextAuth) | ❌ Opsional |
+| `APPLE_ID` / `APPLE_SECRET` | Login Apple (NextAuth) | ❌ Opsional |
+| `NEXTAUTH_SECRET` + `NEXTAUTH_URL` | Session production yang stabil | ✅ Produksi |
+| `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_DSN` | Monitoring error Sentry | ❌ Opsional |
+| `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` | Forward analytics ke Plausible | ❌ Opsional |
+| `LIVE_PUBLISH_TOKEN` / `PUSH_SEND_TOKEN` | Kunci endpoint live/push di produksi | ✅ Produksi |
+| `NEXT_PUBLIC_SITE_URL` | Canonical URL situs | ✅ Produksi |
 
-## 📁 Project structure
+---
+
+## 📁 Struktur Proyek
 
 ```
 src/
-  app/                # Next.js App Router (pages + layouts + loading states)
-    [section]/        # Dynamic category pages
-    article/[slug]/   # Article detail page
-    opinions/         # Opinion landing page
-    search/           # Search results page
-  components/         # Reusable UI (Masthead, Footer, ArticleCard, Ticker…)
-  lib/                # Data, hooks, API adapters
-    data.ts           # Curated articles, columnists, navigation config
-    newsapi.ts        # NewsAPI adapter with local fallback
-    useBookmarks.ts   # localStorage bookmark hook
-public/               # Favicon (W monogram)
+├── app/                    # Next.js App Router
+│   ├── [section]/          # Halaman kanal dinamis
+│   ├── article/[slug]/     # Detail artikel
+│   ├── editorial/          # CMS redaksi (10 halaman + actions)
+│   ├── live/[slug]/        # Live blog real-time
+│   ├── api/                # REST: bookmarks, comments, newsletters,
+│   │                       # live, push, podcasts/rss, analytics, feed
+│   ├── games/ podcasts/ video/ newsletters/ search/
+│   ├── account/ bookmarks/ author/ subscribe/ analytics/
+│   ├── sitemap.ts robots.ts  # SEO dinamis
+│   └── layout.tsx          # JSON-LD, provider, PWA, analytics
+├── components/             # 70+ komponen (Masthead, Footer, Paywall,
+│                           # MiniCrossword, VideoHero, PodcastPlayer, …)
+├── lib/                    # Data, CMS, SEO, store editorial,
+│                           # hooks (paywall, bookmarks, live, reading…)
+├── auth.ts middleware.ts   # NextAuth config + proteksi API
+content/articles/           # 45+ artikel MDX kurasi lokal
+e2e/ tests/unit/            # Playwright + Vitest
+.storybook/                 # Design system (lihat DESIGN_SYSTEM.md)
+public/sw.js                # Service worker PWA
 ```
 
-## 🔒 Security & quality
+---
 
-- `npm audit`: 0 vulnerabilities
-- TypeScript strict mode: passing
-- ESLint (`next/core-web-vitals`): 0 warnings
+## 🧪 Scripts
 
-> This is a demo/clone for educational purposes. Not affiliated with The Washington Post.
+| Perintah | Fungsi |
+|---|---|
+| `npm run dev` | Dev server |
+| `npm run build` / `npm start` | Build & serve produksi |
+| `npm run lint` | ESLint (Next.js) |
+| `npm test` | Unit test (Vitest) |
+| `npm run e2e` | Playwright E2E |
+| `npm run test:visual` / `test:a11y` | Visual regression / aksesibilitas |
+| `npm run storybook` | Design system di `:6006` |
+| `npm run chromatic` | Publish Storybook ke Chromatic |
 
-## Level 5 — Production Quality
+CI (`.github/workflows/ci.yml`) mengotomatiskan: **audit keamanan → type-check → lint → unit test → build → Playwright → deploy Vercel.**
 
-- **Error pages**
-  - Custom branded 404 at `src/app/not-found.tsx` (section links, return-home CTA)
-  - Global error boundary at `src/app/global-error.tsx` (try-again reset, digest id)
-- **SEO**
-  - Central metadata helpers at `src/lib/seo.ts` (Open Graph, Twitter cards, canonical URLs, robots)
-  - Root layout injects `NewsMediaOrganization` + `WebSite` JSON-LD (with `SearchAction`)
-  - Article pages inject `NewsArticle` + `BreadcrumbList` JSON-LD via `generateMetadata`
-  - `sitemap.ts` + `robots.ts` dynamically list every article & section
-  - PWA webmanifest + favicon/apple-touch meta
-  - RSS 2.0 feed at `/api/feed` (auto-linked from `<head>`)
-- **Accessibility**
-  - Skip-to-content link, ARIA `role="banner"` / `role="contentinfo"`
-  - Lightbox, carousel, paywall modal all carry proper roles/labels
-  - Visible `:focus-visible` outline, `prefers-reduced-motion` respected on marquee/live-dot
-  - Color contrast meets WCAG AA for body text, kickers, links
-- **Performance**
-  - Hero/lead/card images migrated to `next/image` via a shared `ArticleImage` wrapper (with remote-image fallback)
-  - Lazy-load non-critical images, eager + `priority` on lead hero
-  - Fonts preconnected, font-display: swap via `<link>` tags (no render-blocking @import)
-  - Masthead skip-link keeps first-paint keyboard reachable
-- **Testing**
-  - Vitest + jsdom + Testing Library configured at `vitest.config.ts`
-  - 14 unit tests covering data layer & SEO helpers (`npm test`)
-  - Playwright config at `playwright.config.ts` with smoke spec in `e2e/smoke.spec.ts` (routes, 404, skip link, RSS XML)
-- **CI/CD**
-  - GitHub Actions workflow at `.github/workflows/ci.yml`:
-    1. Type-check → unit tests → build
-    2. Playwright smoke tests (using built app)
-    3. Vercel deploy (placeholder — requires `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` secrets)
+---
 
-### Additional performance tuning (post-Level-5)
-- **PWA service worker** at `public/sw.js` with three strategies:
-  - HTML pages → network-first, falls back to cache then `/offline` page
-  - Static assets (JS/CSS/fonts/images) → stale-while-revalidate
-  - API routes → network-only (never cached)
-  - `src/components/PWAInit.tsx` registers the SW on `window.load` in production
-  - Dedicated `/offline` fallback page
-  - Apple PWA meta tags (apple-mobile-web-app-capable, apple-touch-icon)
-- **Image placeholders with blur/shimmer**: `ArticleImage` now uses `placeholder="blur"` with a tiny inline SVG base64 gray, fades in with a smooth opacity transition and a shimmer animation. CLS prevented via `fill` layout + fixed aspect-ratio containers.
-- **Fonts self-contained**: Removed blocking `<link>` to Google Fonts; `font-family` stacks now fall back gracefully through Georgia/Franklin Gothic/system fonts — zero third-party font requests. (Playfair/Source Serif still referenced as primary; if a user has them installed, they apply; otherwise the system serif stack renders instantly.)
-- **Code-split search (Fuse.js)**: `fuse.js` is now dynamically imported the first time a user types a query ≥2 characters, instead of being in the initial bundle. The search page JS dropped from **12.4 kB → 3.87 kB**; a substring-matching fallback works while Fuse loads. A separate `fuse.<hash>.js` chunk is created.
-- **Hero image preload**: Homepage hero (`<link rel="preload" as="image" fetchpriority="high">`) in `<head>` ensures LCP image starts fetching immediately.
-- **All remaining `<img>` tags migrated** across article, sections, opinions (columnist round avatars), PhotoGallery, and search results to `next/image` via `ArticleImage` wrapper — automatic format negotiation (WebP/AVIF) and responsive `sizes`.
-- Result: 28 pages statically prerendered (including `/offline`), search route JS down ~69%, zero third-party network hops at first paint, PWA-ready with offline reading.
+## 🚢 Deploy
 
-## Auth & Accounts (NextAuth.js)
+**Vercel (disarankan)** — workflow CI sudah menyiapkan deploy otomatis dari `main`. Siapkan secrets:
 
-- `src/auth.ts` — NextAuth 5 (beta) config with:
-  - **Credentials** (email + password sign-in & sign-up, salted SHA-256)
-  - **Google OAuth** (enabled when `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` are set)
-  - **Apple OAuth** (enabled when `APPLE_ID`/`APPLE_SECRET` are set)
-  - **Demo 1-click provider** (always available for preview/reviewers)
-- `src/middleware.ts` — protects API routes (`/api/bookmarks`, `/api/comments`, `/api/newsletters`, `/api/me`)
-- `.demo-db.json` (gitignored) — lightweight file-backed JSON store (users, accounts, bookmarks, comments, newsletter preferences). Swap for Postgres+Prisma/Drizzle in production.
-- **Account features**:
-  - `/signin` — sign in/up page with Google, email/password, and demo
-  - `/account` — profile card, saved stories list, newsletter preference toggle (auto-saves)
-  - **Saved articles synced across devices** — `BookmarkButton` POSTs to `/api/bookmarks/[slug]`, session preloaded with bookmarks
-  - **Comments posting** — signed-in users POST to `/api/comments/[articleId]`; comments persist in DB
-  - **Newsletter preferences** — per-user toggles saved to server when signed in; localStorage fallback for guests
-  - Masthead shows avatar/initial dropdown when signed in (account, saved, sign out), UserIcon + link to signin when guest
-  - Paywall modal links to `/signin` (callbackUrl preserves current article)
+```
+VERCEL_TOKEN · VERCEL_ORG_ID · VERCEL_PROJECT_ID
+```
 
-### Demo login (no env setup needed)
-1. Click the person icon in the masthead → **Sign in**
-2. Click the red **Try the Demo Account (1-click)** button — instantly signed in as "Demo Reader"
-3. Now you can:
-   - Bookmark any article (💾 synced to server)
-   - Post comments on articles
-   - Toggle newsletters on `/newsletters` (saved to account)
-   - View your saved stories and preferences at `/account`
-4. Use the avatar menu in the top-right to sign out.
+Lalu setiap push ke `main` → build → tes → deploy produksi. ✨
+
+Alternatif: deploy manual ke platform Node.js mana pun:
+
+```bash
+npm run build && npm start
+```
+
+---
+
+## 📦 Rilis
+
+Proyek ini memakai **GitHub Releases** dengan versioning `vMAJOR.MINOR.PATCH`:
+
+- 📥 Lihat semua rilis & changelog: **[Releases](../../releases)**
+- 🆕 Rilis terbaru: **[v1.0.0](../../releases/latest)** — CMS redaksi, PWA offline, push notification, games, podcast RSS & lainnya
+- 🤖 Membuat rilis baru semudah push tag — workflow [release.yml](.github/workflows/release.yml) otomatis me-build, mengetes, lalu mempublish release + catatan rilis:
+
+```bash
+git tag v1.1.0 && git push origin v1.1.0
+```
+
+Lihat [CHANGELOG.md](CHANGELOG.md) untuk riwayat perubahan lengkap.
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] Migrasi database file-JSON → Postgres + Prisma/Drizzle
+- [ ] Komentar real-time (WebSocket) + moderasi AI-assisted
+- [ ] Mode “e-paper” / edisi cetak harian (PDF)
+- [ ] Rekomendasi artikel berbasis riwayat baca
+- [ ] Internasionalisasi (ID/EN) penuh
+- [ ] Visual regression baselines ter-commit + E2E blocking gate di CI
+
+Punya ide? Buka **[Issues](../../issues)** atau kirim PR! 💡
+
+---
+
+## 🤝 Kontribusi
+
+1. Fork repo & buat branch (`git checkout -b fitur/keren`)
+2. Pastikan `npx tsc --noEmit`, `npm test`, dan `npm run build` hijau ✅
+3. Commit dengan pesan jelas → push → buka Pull Request
+
+---
+
+## 🛠️ Dibangun Dengan
+
+`Next.js 15` · `React 18` · `TypeScript 5` · `Tailwind CSS` · `MDX` · `NextAuth` · `Clerk` · `Sanity` · `Fuse.js` · `Web Push` · `Sentry` · `Vitest` · `Playwright` · `Storybook` · `Vercel`
+
+---
+
+## 📄 Disclaimer
+
+> Proyek demo/klon untuk **tujuan edukasi**. Tidak berafiliasi dengan The Washington Post.
+
+<div align="center">
+
+**⭐ Kalau proyek ini bermanfaat, beri Star ya! ⭐**
+
+*“Democracy Dies in Darkness”* 🕯️
+
+</div>
