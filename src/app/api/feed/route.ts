@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server';
 import { getAllArticles } from '@/lib/data';
 import { absoluteUrl } from '@/lib/seo';
 
-export const runtime = 'edge';
+// NOTE: no `runtime = 'edge'` here — edge is incompatible with
+// `force-static` (Next.js disables static generation for that combo) and,
+// more importantly, getAllArticles() reads content/articles/*.mdx via
+// Node's `fs`, which does not exist in the edge runtime. Running on the
+// default Node.js runtime lets this feed prerender at build time with the
+// full MDX article set instead of silently falling back to in-memory stubs.
 export const dynamic = 'force-static';
 export const revalidate = 600;
 
