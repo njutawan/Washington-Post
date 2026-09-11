@@ -126,17 +126,14 @@ if (process.env.APPLE_ID && process.env.APPLE_SECRET) {
 // Demo account provider has been removed — all sign-ins now require
 // real credentials or configured OAuth providers.
 
-// Security: never fall back to a public/known constant in production — that
-// would let anyone forge session JWTs. If NEXTAUTH_SECRET is missing at
-// production runtime we generate a random per-process secret instead: the
-// site stays up and no public secret is ever used, but sessions won't survive
-// restarts (and with multiple instances each instance has its own). Set
-// NEXTAUTH_SECRET in real deployments (see .env.example).
+// Security: never use a hard-coded secret or a public demo secret for JWT
+// signing. If the deployment does not provide NEXTAUTH_SECRET, we generate a
+// random per-process value. This keeps the app usable in local development, but
+// it also means sessions are ephemeral and must not be treated as production
+// stable auth state. Set NEXTAUTH_SECRET in real deployments.
 const nextAuthSecret = (() => {
   if (process.env.NEXTAUTH_SECRET) return process.env.NEXTAUTH_SECRET;
-  if (process.env.NODE_ENV !== 'production') {
-    return 'wapo-demo-secret-dev-only';
-  }
+
   // Suppress the warning during `next build` (phase-production-build): at
   // build time no real sessions are issued, and build workers would log it
   // repeatedly. The warning still fires at request-serving runtime, which is
