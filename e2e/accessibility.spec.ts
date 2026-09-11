@@ -28,7 +28,23 @@ const ROUTES = [
 ];
 
 async function runAxe(page: Page, name: string) {
-  await page.waitForLoadState('networkidle');
+  /**
+   * DO NOT wait for 'networkidle' here: pages with always-open connections
+   * (the live blog's SSE EventSource with 30s polling fallback, analytics
+   * beacons, weather fetches) never reach network idle, so the wait hangs
+   * until the 30s timeout — multiplied across 11 routes × light/dark with
+   * CI retries, that blows the 15-minute job budget. Playwright docs
+   * recommend waiting for concrete UI state instead. `page.goto()` already
+   * resolves on the 'load' event; additionally waiting for <main> visible
+   * covers client-hydrated content without hanging on streaming pages.
+   */
+  await page
+    .locator('main')
+    .first()
+    .waitFor({ state: 'visible', timeout: 15_000 })
+    .catch(() => {
+      /* page without <main> (shouldn't happen — every route renders one) */
+    });
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'])
     .exclude('.x-num')

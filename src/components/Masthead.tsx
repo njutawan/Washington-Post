@@ -10,7 +10,6 @@ import SkipLink from './SkipLink';
 import ThemeToggle from './ThemeToggle';
 import SubscriberMeter from './SubscriberMeter';
 import AuthControls from './AuthControls';
-import BreakingBanner from './BreakingBanner';
 import TopBarWeather from './TopBarWeather';
 import EditionSwitcher from './EditionSwitcher';
 
@@ -28,7 +27,6 @@ export default function Masthead() {
   return (
     <>
       <SkipLink />
-      <BreakingBanner />
       <header className="bg-wp-cream sticky top-0 z-40 shadow-sm" role="banner" style={{ paddingTop: 'var(--sat)' }}>
       {/* Breaking / live ticker — runs ACROSS THE TOP above everything, like WaPo's real red live bar */}
       <LiveTicker />

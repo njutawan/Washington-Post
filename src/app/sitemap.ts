@@ -2,7 +2,8 @@ import type { MetadataRoute } from 'next';
 import { getAllArticles, topNav, subNav, getAllAuthors } from '@/lib/data';
 import { absoluteUrl } from '@/lib/seo';
 
-export const runtime = 'edge';
+// No edge runtime: edge disables static generation for this route and
+// getAllArticles() needs Node `fs` so all MDX articles appear in the sitemap.
 export const dynamic = 'force-static';
 export const revalidate = 600;
 

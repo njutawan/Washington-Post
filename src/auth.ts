@@ -165,12 +165,18 @@ const nextAuthSecret = (() => {
   if (process.env.NODE_ENV !== 'production') {
     return 'wapo-demo-secret-dev-only';
   }
-  // eslint-disable-next-line no-console
-  console.warn(
-    '[auth] NEXTAUTH_SECRET is not set. Using a random per-process secret — ' +
-      'sessions will not survive restarts and multi-instance deploys will ' +
-      'desync. Set NEXTAUTH_SECRET in production.',
-  );
+  // Suppress the warning during `next build` (phase-production-build): at
+  // build time no real sessions are issued, and build workers would log it
+  // repeatedly. The warning still fires at request-serving runtime, which is
+  // where a missing secret actually matters.
+  if (process.env.NEXT_PHASE !== 'phase-production-build') {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[auth] NEXTAUTH_SECRET is not set. Using a random per-process secret — ' +
+        'sessions will not survive restarts and multi-instance deploys will ' +
+        'desync. Set NEXTAUTH_SECRET in production.',
+    );
+  }
   return randomBytes(32).toString('hex');
 })();
 

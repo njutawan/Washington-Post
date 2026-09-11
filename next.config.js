@@ -61,7 +61,6 @@ const nextConfig = {
       'X-Frame-Options': 'DENY',
       'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
     };
-
     const productionCsp = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.accounts.dev",
@@ -99,10 +98,30 @@ const nextConfig = {
           { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
         ],
       },
+      {
+        /**
+         * Service worker (per the Next.js PWA guide): the SW file itself must
+         * never be cached by the browser, otherwise an old worker keeps
+         * serving stale precaches after a deploy. A scoped CSP also applies
+         * while it executes.
+         */
+        source: '/sw.js',
+        headers: [
+          { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Content-Security-Policy', value: "default-src 'self'; script-src 'self'" },
+        ],
+      },
     ];
 
     if (process.env.NODE_ENV === 'production') {
       headers[0].headers.push({ key: 'Content-Security-Policy', value: productionCsp });
+      // HSTS (per the Next.js headers docs). HTTPS-only header, so production
+      // only — over plain HTTP it is ignored and would break local dev trust.
+      headers[0].headers.push({
+        key: 'Strict-Transport-Security',
+        value: 'max-age=63072000; includeSubDomains; preload',
+      });
     }
 
     return headers;

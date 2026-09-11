@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { getAuthorBySlug, getArticlesByAuthor } from '@/lib/data';
 import { absoluteUrl } from '@/lib/seo';
 
-export const runtime = 'edge';
+// No edge runtime: force-static is ignored on edge and getArticlesByAuthor
+// needs Node `fs` to include MDX articles (see src/app/api/feed/route.ts).
 export const dynamic = 'force-static';
 export const revalidate = 600;
 

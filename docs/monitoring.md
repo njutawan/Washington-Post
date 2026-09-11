@@ -65,7 +65,7 @@ Sentry is wired up per
 
 | File                                | Purpose                                           |
 |-------------------------------------|---------------------------------------------------|
-| `sentry.client.config.ts`           | Browser SDK: Replay + BrowserTracing              |
+| `src/instrumentation-client.ts`     | Browser SDK: Replay + BrowserTracing              |
 | `sentry.server.config.ts`           | Node/SSR SDK                                      |
 | `sentry.edge.config.ts`             | Edge runtime (middleware, edge routes)            |
 | `src/instrumentation.ts`            | Registers server/edge configs; `onRequestError`   |

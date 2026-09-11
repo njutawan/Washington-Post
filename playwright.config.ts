@@ -9,7 +9,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  // In CI also emit the GitHub reporter: every failed test becomes a check
+  // annotation on the PR, so the exact failing spec/assertion is visible in
+  // the Checks tab without downloading the HTML report artifact. Locally the
+  // HTML report stays the single output.
+  reporter: process.env.CI ? [['github'], ['html']] : 'html',
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
@@ -30,11 +34,20 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    // For manual a11y runs, include mobile viewport to exercise tap-target sizes
-    {
-      name: 'mobile-safari',
-      use: { ...devices['iPhone 13'] },
-      grepInvert: /dark mode/, // color-scheme emulation conflicts with mobile in some versions
-    },
+    // Mobile Safari (WebKit) — manual a11y runs ONLY. The iPhone 13 device
+    // descriptor uses the WebKit engine, but CI installs Chromium only
+    // (.github/workflows/ci.yml), so this project failed EVERY test in CI
+    // with "browser executable doesn't exist" (the whole e2e job has never
+    // been green for exactly this reason). Excluded from CI runs here;
+    // run locally with: npx playwright install webkit && npx playwright test
+    ...(process.env.CI
+      ? []
+      : [
+          {
+            name: 'mobile-safari',
+            use: { ...devices['iPhone 13'] },
+            grepInvert: /dark mode/, // color-scheme emulation conflicts with mobile in some versions
+          },
+        ]),
   ],
 });

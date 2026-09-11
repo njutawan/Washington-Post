@@ -294,6 +294,22 @@ Punya ide? Buka **[Issues](../../issues)** atau kirim PR! 💡
 
 ---
 
+## 🤖 AI-Assisted Development (Context7)
+
+Repo ini sudah terintegrasi dengan **[Context7](https://github.com/upstash/context7)** —
+server MCP dari Upstash yang menyuntikkan dokumentasi library terkini (Next.js 15,
+React, Tailwind, Sentry, dst.) langsung ke prompt AI coding assistant Anda.
+
+- Konfigurasi siap pakai: `.mcp.json` (Claude Code), `.cursor/mcp.json` (Cursor),
+  `.vscode/mcp.json` (VS Code Copilot) — tanpa API key pun langsung berfungsi.
+- Aturan agen ada di `AGENTS.md` / `CLAUDE.md` / `.cursor/rules/`.
+- Cukup tulis `use context7` di prompt, atau `use library /vercel/next.js` untuk
+  dokumentasi Next.js yang presisi versi.
+
+Panduan lengkap: [docs/context7.md](docs/context7.md).
+
+---
+
 ## 🤝 Kontribusi
 
 1. Fork repo & buat branch (`git checkout -b fitur/keren`)

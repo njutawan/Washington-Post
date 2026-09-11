@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { EPISODES } from '@/lib/podcast';
 
-export const runtime = 'edge';
+// No edge runtime: Next.js ignores force-static on edge routes; keep this
+// feed prerendered at build time on the default Node.js runtime.
 export const dynamic = 'force-static';
 export const revalidate = 600;
 
