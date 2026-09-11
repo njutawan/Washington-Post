@@ -74,6 +74,26 @@ html, body {
   font-feature-settings: "kern" 1, "liga" 1, "clig" 1, "onum" 1;
   font-kerning: normal;
   hanging-punctuation: first last;
+  /* Scroll offset so anchor jumps & skip-links leave room for the sticky
+   * masthead (approximate height; exact value is set per-breakpoint below). */
+  scroll-padding-top: 96px;
+  scroll-behavior: smooth;
+}
+@media (min-width: 768px) {
+  html, body { scroll-padding-top: 140px; }
+}
+@media (min-width: 1024px) {
+  html, body { scroll-padding-top: 176px; }
+}
+
+/* Honour users who prefer reduced motion — kill smooth scroll & transitions. */
+@media (prefers-reduced-motion: reduce) {
+  html, body { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Prevent pull-to-refresh bouncing inside modals */
@@ -596,3 +616,93 @@ body.no-scroll {
   to   { opacity: 1; transform: translate(-50%, 0); }
 }
 .animate-fadeUp { animation: fadeUp 0.25s ease-out; }
+
+/* ------------------------------------------------------------------ */
+/* Fluid / adaptive typography                                        */
+/*                                                                     */
+/* Utility classes using CSS clamp() so headlines scale smoothly from  */
+/* mobile → desktop without needing stacked sm:/md:/lg: overrides.     */
+/* Sizes chosen for news-site display typography (Playfair-ish mood).   */
+/* ------------------------------------------------------------------ */
+.fluid-display { /* Big hero masthead title */
+  font-size: clamp(2.25rem, 1.6rem + 3.3vw, 6rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+}
+.fluid-h1 { /* Article h1 / major page title */
+  font-size: clamp(1.875rem, 1.4rem + 1.8vw, 3.25rem);
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+}
+.fluid-h2 { /* Section heads, related-stories title */
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2.25rem);
+  line-height: 1.12;
+}
+.fluid-h3 { /* Article card headline */
+  font-size: clamp(1.125rem, 1rem + 0.45vw, 1.5rem);
+  line-height: 1.2;
+}
+.fluid-kicker {
+  font-size: clamp(0.65rem, 0.6rem + 0.2vw, 0.8rem);
+  letter-spacing: 0.08em;
+}
+.fluid-dek { /* Article standfirst/subhead */
+  font-size: clamp(1rem, 0.92rem + 0.4vw, 1.35rem);
+  line-height: 1.4;
+}
+.fluid-body { /* Article body */
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.2rem);
+  line-height: 1.7;
+}
+@media (min-width: 1024px) {
+  .fluid-body { line-height: 1.75; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Mobile bottom navigation bar                                       */
+/* ------------------------------------------------------------------ */
+.mobile-bottom-nav {
+  position: fixed;
+  left: 0; right: 0;
+  bottom: 0;
+  z-index: 45;                         /* above PodcastMiniPlayer (z-50 wins when playing) */
+  background: var(--wp-cream);
+  border-top: 1px solid var(--wp-border);
+  padding-bottom: var(--sab);
+  box-shadow: 0 -1px 3px rgba(0,0,0,0.04);
+  display: none;
+}
+@media (max-width: 767px) {
+  .mobile-bottom-nav { display: flex; }
+}
+.mobile-bottom-nav a {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 4px 6px;
+  min-height: 56px;
+  color: var(--wp-gray);
+  text-decoration: none;
+  font-family: var(--font-sans), sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: color 0.15s;
+}
+.mobile-bottom-nav a:active { background: var(--wp-light); }
+.mobile-bottom-nav a[aria-current="page"],
+.mobile-bottom-nav a[data-active="true"] {
+  color: var(--wp-black);
+}
+.mobile-bottom-nav a[data-active="true"] svg,
+.mobile-bottom-nav a[aria-current="page"] svg {
+  color: var(--wp-red);
+}
+/* When podcast mini-player is mounted, push bottom nav up by 56px */
+body.podcast-playing .mobile-bottom-nav {
+  bottom: 56px;
+}

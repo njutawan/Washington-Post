@@ -14,6 +14,7 @@ import PageTransitions from '@/components/PageTransitions';
 import RouteLoadingBar from '@/components/RouteLoadingBar';
 import { PodcastProvider } from '@/components/PodcastProvider';
 import PodcastMiniPlayer from '@/components/PodcastMiniPlayer';
+import BottomNav from '@/components/BottomNav';
 import GateInterceptor from '@/components/GateInterceptor';
 import Toaster from '@/components/Toaster';
 // Font CSS variables (--font-sans / --font-serif / --font-display) are
@@ -71,6 +72,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <ReadingProvider>
                 {children}
                 <PodcastMiniPlayer />
+                <BottomNav />
                 <GateInterceptor />
                 <Toaster />
               </ReadingProvider>

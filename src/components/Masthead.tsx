@@ -131,7 +131,7 @@ export default function Masthead() {
           Democracy Dies in Darkness
         </div>
         <Link href="/" className="inline-block" onClick={closeMenu}>
-          <h1 className="masthead-title text-4xl sm:text-5xl md:text-7xl lg:text-8xl leading-none tracking-tightest hover:text-wp-ink">
+          <h1 className="masthead-title fluid-display tracking-tightest hover:text-wp-ink">
             The Washington Post
           </h1>
         </Link>

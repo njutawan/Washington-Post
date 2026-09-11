@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { CloseIcon, ChevronRightIcon } from './Icons';
+import { CloseIcon, ChevronRightIcon, ChevronLeftIcon } from './Icons';
 import FocusTrap from './FocusTrap';
 
 export type Photo = {
@@ -164,33 +164,36 @@ export default function Lightbox({
       <button
         onClick={close}
         aria-label="Close"
-        className="absolute top-3 right-3 md:top-4 md:right-4 w-12 h-12 flex items-center justify-center text-white hover:text-wp-red z-10 tap-target"
+        className="absolute top-3 right-3 md:top-4 md:right-4 w-12 h-12 flex items-center justify-center text-white hover:text-wp-red z-10 tap-target bg-black/40 md:bg-transparent rounded-full backdrop-blur-sm"
       >
-        <CloseIcon className="w-7 h-7" />
+        <CloseIcon className="w-6 h-6 md:w-7 md:h-7" />
       </button>
 
+      {/* Prev/next — visible on all breakpoints. On mobile they sit at the
+          bottom corners (thumb-reach zone) with a 48px hit area; on desktop
+          they sit centered vertically with larger chevrons. */}
       <button
         onClick={(e) => { e.stopPropagation(); prev(); }}
         aria-label="Previous photo"
-        className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center text-white hover:text-wp-red z-10 tap-target"
+        className="absolute left-2 bottom-3 md:left-4 md:top-1/2 md:-translate-y-1/2 md:bottom-auto w-12 h-12 flex items-center justify-center text-white hover:text-wp-red z-10 tap-target bg-black/50 md:bg-transparent rounded-full backdrop-blur-sm md:backdrop-blur-none"
       >
-        <ChevronRightIcon className="w-10 h-10 rotate-180" />
+        <ChevronLeftIcon className="w-7 h-7 md:w-10 md:h-10" />
       </button>
       <button
         onClick={(e) => { e.stopPropagation(); next(); }}
         aria-label="Next photo"
-        className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center text-white hover:text-wp-red z-10 tap-target"
+        className="absolute right-2 bottom-3 md:right-4 md:top-1/2 md:-translate-y-1/2 md:bottom-auto w-12 h-12 flex items-center justify-center text-white hover:text-wp-red z-10 tap-target bg-black/50 md:bg-transparent rounded-full backdrop-blur-sm md:backdrop-blur-none"
       >
-        <ChevronRightIcon className="w-10 h-10" />
+        <ChevronRightIcon className="w-7 h-7 md:w-10 md:h-10" />
       </button>
 
-      {/* Mobile swipe hint */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 text-white/70 text-[10px] font-sans uppercase tracking-widest md:hidden">
-        Swipe · double-tap to zoom
+      {/* Mobile hint / counter badge */}
+      <div className="absolute top-3 left-3 md:top-4 md:left-4 text-white/80 text-[11px] font-sans uppercase tracking-widest md:hidden bg-black/40 backdrop-blur-sm px-3 py-2 rounded-full">
+        {i + 1} / {photos.length}
       </div>
 
       <figure
-        className="max-w-[95vw] max-h-[90vh] flex flex-col items-center touch-none select-none"
+        className="max-w-[95vw] max-h-[90vh] flex flex-col items-center touch-none select-none md:mb-0 mb-14"
         onClick={(e) => e.stopPropagation()}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}

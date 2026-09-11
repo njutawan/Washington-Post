@@ -135,18 +135,18 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
           <article className="col-span-12 lg:col-span-7 order-2">
             {article.kicker && (
-              <div className="kicker text-wp-red mb-3 text-sm">{article.kicker}</div>
+              <div className="kicker text-wp-red mb-3 fluid-kicker">{article.kicker}</div>
             )}
 
             <h1
-              className="headline text-3xl md:text-4xl lg:text-5xl mb-4 leading-tight"
+              className="headline fluid-h1 mb-4 leading-tight"
               style={{ viewTransitionName: 'vt-title', contain: 'layout' }}
             >
               {article.title}
             </h1>
 
             {article.dek && (
-              <p className="dek text-xl md:text-2xl mb-5 text-wp-ink leading-snug font-serif italic border-l-4 border-wp-red pl-4">
+              <p className="dek fluid-dek mb-5 text-wp-ink leading-snug font-serif italic border-l-4 border-wp-red pl-4">
                 {article.dek}
               </p>
             )}

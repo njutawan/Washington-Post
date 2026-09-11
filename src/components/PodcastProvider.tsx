@@ -138,6 +138,15 @@ export function PodcastProvider({ children }: { children: ReactNode }) {
     if (audioRef.current) audioRef.current.playbackRate = r;
   }, []);
 
+  // Toggle body.podcast-playing so the mobile bottom nav can shift up above
+  // the mini-player when it is visible (player is always mounted once audio
+  // has initialised, but we only offset when there is a meaningful bar).
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.body.classList.add('podcast-playing');
+    return () => document.body.classList.remove('podcast-playing');
+  }, []);
+
   return (
     <PodcastCtx.Provider value={{
       episode, playing, currentTime, duration, rate, mini,
