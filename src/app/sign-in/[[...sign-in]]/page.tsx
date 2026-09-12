@@ -33,14 +33,14 @@ export default function SignInRoute() {
             <p className="dek text-sm mb-6">
               Set <code className="font-mono text-xs">NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY</code> and{' '}
               <code className="font-mono text-xs">CLERK_SECRET_KEY</code> in{' '}
-              <code className="font-mono text-xs">.env.local</code> to activate Clerk, or keep using
-              the demo account form.
+              <code className="font-mono text-xs">.env.local</code> to activate Clerk, or use the
+              email/password sign-in form.
             </p>
             <Link
               href="/signin"
               className="inline-block bg-wp-black text-white px-5 py-3 font-sans font-bold uppercase tracking-wider text-xs hover:bg-wp-red transition"
             >
-              Use demo sign-in
+              Use email sign-in
             </Link>
           </div>
         )}

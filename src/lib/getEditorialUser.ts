@@ -54,7 +54,6 @@ export async function getEditorialUser(minRole: EditorialRole = 'author'): Promi
       const { auth: na } = await import('@/auth');
       const s = await na();
       if (s?.user?.id) {
-        // Merge role from demo env if present
         sess = {
           userId: s.user.id,
           user: { id: s.user.id, email: s.user.email || undefined, name: s.user.name || undefined, image: s.user.image || undefined },

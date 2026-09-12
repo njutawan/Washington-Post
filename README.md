@@ -38,7 +38,7 @@ Replika tampilan, nuansa, dan pengalaman membaca **The Washington Post** — dar
 |---|---|
 | 📰 **Pengalaman Koran Otentik** | Masthead klasik + motto, tipografi serif (Playfair Display / Source Serif), aksen merah WaPo `#b40001`, divider double-rule khas koran |
 | ✍️ **CMS Redaksi (`/editorial`)** | Dashboard Kanban 10 halaman: kelola stories (idea → published), assignments, moderasi komentar, liveblog, media, staff, analytics, alerts & settings + role-based access |
-| 🔐 **Auth Ganda + Akun Pembaca** | NextAuth (email/password, Google, Apple, **Demo 1-klik**) + Clerk — bookmark tersinkron, komentar persist, preferensi newsletter per-akun |
+| 🔐 **Auth Ganda + Akun Pembaca** | NextAuth (email/password, Google, Apple) + Clerk — bookmark tersinkron, komentar persist, preferensi newsletter per-akun |
 | 💳 **Metered Paywall** | 3 artikel gratis/bulan (terlacak), blur artikel + modal subscribe, progress meter di tiap cerita |
 | 🔴 **Live Blog Real-Time** | Timeline reverse-chronological dengan pulse LIVE, timestamp, SSE live-updates + endpoint publish untuk redaksi |
 | 📱 **PWA + Mode Offline** | Service worker (3 strategi cache), halaman `/offline`, prompt install, bottom-nav ala aplikasi berita |
@@ -77,7 +77,7 @@ Replika tampilan, nuansa, dan pengalaman membaca **The Washington Post** — dar
 <details>
 <summary><b>🔐 Auth, Akun & Personalisasi</b></summary>
 
-- NextAuth 5: Credentials (salted SHA-256), Google & Apple OAuth, **Demo 1-klik** (tanpa setup env!)
+- NextAuth 5: Credentials (salted SHA-256), Google & Apple OAuth
 - Clerk (sign-in/sign-up catch-all routes) sebagai penyedia auth modern
 - `/account`: profil, saved stories tersinkron lintas-device, toggle newsletter auto-save, riwayat baca
 - API terproteksi via middleware: `/api/bookmarks`, `/api/comments`, `/api/newsletters`, `/api/me`
@@ -175,10 +175,10 @@ npm run dev
 
 Buka **http://localhost:3000** 🎉
 
-### ⚡ Coba akun demo (1 klik, tanpa setup)
+### 🔐 Akun
 
 1. Klik ikon 👤 di masthead → **Sign in**
-2. Klik tombol merah **Try the Demo Account (1-click)** — langsung masuk sebagai “Demo Reader”!
+2. Buat akun baru dengan email/password, atau login via Google/Apple jika sudah dikonfigurasi
 3. Bookmark artikel 💾, posting komentar 💬, atur newsletter 📬, lalu lihat semuanya di `/account`
 
 ---

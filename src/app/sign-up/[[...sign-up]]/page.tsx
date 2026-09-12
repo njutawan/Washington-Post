@@ -33,13 +33,13 @@ export default function SignUpRoute() {
             <h1 className="headline text-2xl mb-3">Clerk sign-up is not enabled</h1>
             <p className="dek text-sm mb-6">
               Add your Clerk keys to <code className="font-mono text-xs">.env.local</code> to enable
-              self-serve sign-up, or create an account through the demo form.
+              self-serve sign-up, or create an account through the email sign-up form.
             </p>
             <Link
               href="/signin"
               className="inline-block bg-wp-black text-white px-5 py-3 font-sans font-bold uppercase tracking-wider text-xs hover:bg-wp-red transition"
             >
-              Use demo sign-up
+              Use email sign-up
             </Link>
           </div>
         )}
