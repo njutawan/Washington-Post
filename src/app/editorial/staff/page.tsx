@@ -43,7 +43,6 @@ export default async function StaffPage() {
 
       <p className="text-xs text-wp-gray font-sans mt-6 leading-relaxed">
         Roles and permissions are provisioned via Clerk Organizations / public metadata in production.
-        For sandbox review, use <code className="font-mono">NEXT_PUBLIC_DEMO_EDITOR_ROLE=admin</code> (or <code>editor</code>/<code>author</code>) to impersonate roles without Clerk.
       </p>
     </div>
   );

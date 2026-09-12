@@ -8,12 +8,6 @@ import Masthead from '@/components/Masthead';
 import Footer from '@/components/Footer';
 import Breadcrumbs from '@/components/Breadcrumbs';
 
-// Mirrors the condition in src/auth.ts that decides whether the no-credential
-// "demo" provider is registered — so the button and the provider can never
-// disagree (disabled in production unless NEXT_PUBLIC_ENABLE_DEMO=1).
-const DEMO_ENABLED =
-  process.env.NEXT_PUBLIC_ENABLE_DEMO === '1' || process.env.NODE_ENV !== 'production';
-
 // When Clerk is configured it owns authentication, so the legacy form hands off
 // to Clerk's route instead of showing a second, competing sign-in surface.
 const CLERK_ENABLED = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
@@ -81,7 +75,6 @@ export default function SignInPage() {
     }
   };
 
-  const signInDemo = () => signIn('demo', { callbackUrl });
   const signInGoogle = () => signIn('google', { callbackUrl });
 
   return (
@@ -107,17 +100,8 @@ export default function SignInPage() {
             </div>
           )}
 
-          {/* OAuth / Demo */}
+          {/* OAuth */}
           <div className="space-y-2 mb-6">
-            {DEMO_ENABLED ? (
-              <button
-                onClick={signInDemo}
-                className="w-full py-3 bg-wp-red text-white font-sans font-bold uppercase tracking-wider text-sm hover:bg-wp-black transition"
-                type="button"
-              >
-                Try the Demo Account (1-click)
-              </button>
-            ) : null}
             <button
               onClick={signInGoogle}
               className="w-full py-3 border-2 border-wp-black font-sans font-bold text-sm hover:bg-wp-light transition flex items-center justify-center gap-2"
@@ -206,7 +190,7 @@ export default function SignInPage() {
             </button>
           </p>
           <p className="text-[11px] font-sans text-wp-gray mt-4 text-center">
-            By continuing you agree to the demo Terms of Service and Privacy Policy.
+            By continuing you agree to the Terms of Service and Privacy Policy.
           </p>
           <div className="mt-4 text-center">
             <Link href="/" className="text-xs font-sans text-wp-gray hover:text-wp-black underline">

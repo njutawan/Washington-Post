@@ -4,9 +4,7 @@
  * Roles are sourced, in order:
  *  1. Clerk session publicMetadata.role  (production: editors/admins set via Clerk Dashboard
  *     or Organization Membership with role 'admin' / 'editor' / 'author').
- *  2. NEXT_PUBLIC_DEMO_EDITOR_ROLE env var (sandbox/demo — lets reviewers access the CMS
- *     without configuring Clerk org roles). Values: 'admin' | 'editor' | 'author' | 'reader'.
- *  3. Default: 'reader' (no CMS access).
+ *  2. Default: 'reader' (no CMS access).
  */
 export type EditorialRole = 'reader' | 'author' | 'editor' | 'admin';
 
@@ -51,9 +49,6 @@ export function resolveRole(sess: SessionLike | null | undefined): EditorialRole
     if (r.includes('admin')) return 'admin';
     if (r.includes('editor')) return 'editor';
   }
-  // 3. Demo env override
-  const demo = (process.env.NEXT_PUBLIC_DEMO_EDITOR_ROLE || '').toLowerCase();
-  if (demo === 'admin' || demo === 'editor' || demo === 'author' || demo === 'reader') return demo as EditorialRole;
   return 'reader';
 }
 

@@ -123,36 +123,8 @@ if (process.env.APPLE_ID && process.env.APPLE_SECRET) {
   );
 }
 
-// If no OAuth providers are configured, expose a demo "one-click" provider so
-// reviewers can test the account experience without needing env vars.
-// Security: this provider signs in a fixed account with NO credential
-// check, so it is disabled in production unless explicitly re-enabled with
-// NEXT_PUBLIC_ENABLE_DEMO=1.
-// NEXT_PUBLIC_ prefix so the /signin page can mirror this exact condition
-// when deciding whether to render the demo button (client + server agree).
-const demoProviderEnabled =
-  process.env.NEXT_PUBLIC_ENABLE_DEMO === '1' || process.env.NODE_ENV !== 'production';
-
-if (!process.env.GOOGLE_CLIENT_ID && demoProviderEnabled) {
-  // Demo provider: sign in as demo@wapo-clone.example.com instantly.
-  providers.push({
-    id: 'demo',
-    name: 'Demo (1-click)',
-    type: 'credentials' as const,
-    credentials: {},
-    async authorize() {
-      let user = await findUserByEmail('demo@wapo-clone.example.com');
-      if (!user) {
-        user = await createUserWithEmail({
-          email: 'demo@wapo-clone.example.com',
-          password: 'demo1234',
-          name: 'Demo Reader',
-        });
-      }
-      return { id: user.id, email: user.email, name: user.name, image: null };
-    },
-  } as any);
-}
+// Demo account provider has been removed — all sign-ins now require
+// real credentials or configured OAuth providers.
 
 // Security: never fall back to a public/known constant in production — that
 // would let anyone forge session JWTs. If NEXTAUTH_SECRET is missing at
@@ -206,7 +178,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user, account }) {
       if (account?.provider && user) {
         // OAuth sign-in — upsert user in our DB
-        if (account.provider !== 'credentials' && account.provider !== 'demo') {
+        if (account.provider !== 'credentials') {
           const dbUser = await createOAuthUser({
             email: user.email || '',
             name: user.name || undefined,
