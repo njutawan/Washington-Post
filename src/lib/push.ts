@@ -1,11 +1,10 @@
 /**
  * Server-side Web Push helpers.
  *
- * Uses VAPID keys from env vars (NEXT_PUBLIC_VAPID_PUBLIC / VAPID_PRIVATE)
- * with built-in demo keys so the feature works out of the box without any
- * configuration. In production you MUST override these with your own keys
- * (generated via `web-push generate-vapid-keys`) and NEVER commit the private
- * key to source control.
+ * A fixed VAPID keypair in source control would be a credential leak. If the
+ * deployment does not provide keys via env, we generate a per-process keypair in
+ * local/test runs so the demo continues to work without committing any secret.
+ * Production deployments should still set real env keys.
  *
  * Subscriptions are stored in an in-memory Set for demo purposes — replace
  * with a database table in production.
@@ -14,18 +13,31 @@
 import webpush from 'web-push';
 import type { PushSubscription as WebPushSubscription } from 'web-push';
 
-const DEFAULT_PUBLIC =
-  'BMW7HFJkqJy27ycVaQ1fkdKRaaeIltTYvE4jmWzc3w1ZM_j3KA-SYzC-Mq3qgACOpENftDOVftwAiaMzqiVfOco';
-const DEFAULT_PRIVATE = 'giZC056jMYk15n3g3joxUD1-9n7qCb012K9LtPL10Ok';
+const generatedKeys =
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC && process.env.VAPID_PRIVATE
+    ? null
+    : webpush.generateVAPIDKeys();
 
-const PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC || DEFAULT_PUBLIC;
-const PRIVATE_KEY = process.env.VAPID_PRIVATE || DEFAULT_PRIVATE;
+const generatedPublicKey =
+  generatedKeys && 'publicKey' in generatedKeys ? generatedKeys.publicKey : (generatedKeys as { public?: string } | null)?.public;
+const generatedPrivateKey =
+  generatedKeys && 'privateKey' in generatedKeys ? generatedKeys.privateKey : (generatedKeys as { private?: string } | null)?.private;
+
+const PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC || generatedPublicKey || '';
+const PRIVATE_KEY = process.env.VAPID_PRIVATE || generatedPrivateKey || '';
 const SUBJECT = process.env.VAPID_SUBJECT || 'mailto:push@wapo-clone.example.com';
 
-webpush.setVapidDetails(SUBJECT, PUBLIC_KEY, PRIVATE_KEY);
+if (PUBLIC_KEY && PRIVATE_KEY) {
+  webpush.setVapidDetails(SUBJECT, PUBLIC_KEY, PRIVATE_KEY);
+} else if (process.env.NODE_ENV === 'production') {
+  // eslint-disable-next-line no-console
+  console.warn(
+    '[push] Missing VAPID keys: set NEXT_PUBLIC_VAPID_PUBLIC and VAPID_PRIVATE to enable web push.',
+  );
+}
 
 export function getVapidPublicKey() {
-  return PUBLIC_KEY;
+  return PUBLIC_KEY || '';
 }
 
 // ---------- Subscription store ----------
@@ -94,7 +106,7 @@ export function addSubscription(
   subscription: WebPushSubscription,
   opts: { topics?: string[]; userAgent?: string } = {},
 ) {
-  if (!subscription?.endpoint) return false;
+  if (!subscription?.endpoint || !PUBLIC_KEY || !PRIVATE_KEY) return false;
   // SSRF guard — reject endpoints that aren't a known public push service.
   if (!isValidPushEndpoint(subscription.endpoint)) return false;
   const isNew = !subs.has(subscription.endpoint);
@@ -138,6 +150,10 @@ export type PushPayload = {
 };
 
 export async function sendPush(payload: PushPayload) {
+  if (!PUBLIC_KEY || !PRIVATE_KEY) {
+    return { sent: 0, failed: 0, disabled: true };
+  }
+
   const targets = listSubscriptions(payload.topic);
   if (!targets.length) return { sent: 0, failed: 0 };
 

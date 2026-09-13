@@ -75,7 +75,8 @@
   "overrides": {
     "glob": "^10.4.20",
     "minimatch": "^9.0.9",
-    "postcss": "^8.5.28"
+    "postcss": "^8.5.28",
+    "elliptic": "^6.6.1"
   },
   "engines": {
     "node": ">=22.12.0"
