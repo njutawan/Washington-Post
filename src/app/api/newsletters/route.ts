@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { setNewsletterPrefs, findUserById } from '@/lib/db';
 import { sendEmail } from '@/lib/email';
+import { csrfBlock } from '@/lib/csrf';
 
 const NEWSLETTER_NAMES: Record<string, string> = {
   'morning-mix': 'The Morning Mix',
@@ -43,6 +44,8 @@ export async function GET(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  const blocked = csrfBlock(req);
+  if (blocked) return blocked;
   const session = await auth();
   const { preferences, email } = await req.json();
   if (session?.user?.id) {

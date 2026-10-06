@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addLiveUpdate, isValidLiveSlug } from '@/lib/liveData';
 import { devOnlyGuard } from '@/lib/devGuard';
+import { csrfBlock } from '@/lib/csrf';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,8 @@ const BODY_MAX = 2000;
 const BYLINE_MAX = 100;
 
 export async function POST(req: NextRequest) {
+  const blocked = csrfBlock(req);
+  if (blocked) return blocked;
   const guarded = devOnlyGuard(req, {
     header: 'x-live-publish-token',
     envVar: 'LIVE_PUBLISH_TOKEN',

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { addComment, getComments } from '@/lib/db';
+import { csrfBlock } from '@/lib/csrf';
 
 export async function GET(_: Request, { params }: { params: Promise<{ articleId: string }> }) {
   const { articleId } = await params;
@@ -9,6 +10,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ articleId:
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ articleId: string }> }) {
+  const blocked = csrfBlock(req);
+  if (blocked) return blocked;
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Sign in to comment' }, { status: 401 });

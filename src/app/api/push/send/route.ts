@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendPush, type PushPayload } from '@/lib/push';
 import { devOnlyGuard } from '@/lib/devGuard';
+import { csrfBlock } from '@/lib/csrf';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +32,8 @@ function cleanSameOriginPath(value: unknown, maxLen: number): string | undefined
 }
 
 export async function POST(req: NextRequest) {
+  const blocked = csrfBlock(req);
+  if (blocked) return blocked;
   const guarded = devOnlyGuard(req, {
     header: 'x-push-send-token',
     envVar: 'PUSH_SEND_TOKEN',
