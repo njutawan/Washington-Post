@@ -29,7 +29,7 @@ export default function Footer() {
         <div className="wp-container py-10">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <p className="kicker text-wp-red mb-2">Stay informed</p>
+              <p className="kicker text-red-400 mb-2">Stay informed</p>
               <h2 className="masthead-title text-3xl md:text-4xl mb-3">The Morning Mix</h2>
               <p className="font-sans text-gray-300 text-sm max-w-md">
                 The day’s most important news and commentary — before sunrise, every weekday.
@@ -84,14 +84,14 @@ export default function Footer() {
             © {new Date().getFullYear()} The Washington Post Clone · Built for demo purposes with Next.js & Tailwind CSS.
           </div>
           <div className="flex items-center gap-4 text-xs font-sans text-gray-400">
-            <a href="#" className="hover:text-white">Terms</a>
-            <a href="#" className="hover:text-white">Privacy</a>
-            <a href="#" className="hover:text-white">Cookies</a>
-            <a href="#" className="hover:text-white">Accessibility</a>
-            <span className="hidden md:inline text-gray-600">|</span>
+            <a href="#" className="text-gray-300 hover:text-white">Terms</a>
+            <a href="#" className="text-gray-300 hover:text-white">Privacy</a>
+            <a href="#" className="text-gray-300 hover:text-white">Cookies</a>
+            <a href="#" className="text-gray-300 hover:text-white">Accessibility</a>
+            <span className="hidden md:inline text-gray-400">|</span>
             <div className="flex gap-3">
               {['Twitter', 'Facebook', 'Instagram', 'YouTube'].map((s) => (
-                <a key={s} href="#" className="hover:text-white" aria-label={s}>{s[0]}</a>
+                <a key={s} href="#" className="text-gray-300 hover:text-white" aria-label={s}>{s[0]}</a>
               ))}
             </div>
           </div>

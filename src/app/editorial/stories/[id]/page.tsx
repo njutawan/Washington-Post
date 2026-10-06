@@ -139,7 +139,7 @@ export default async function StoryEditor({ params }: { params: Promise<{ id: st
         </div>
 
         {/* Right rail: metadata + workflow */}
-        <aside className="space-y-5">
+        <aside aria-label="Story workflow" className="space-y-5">
           <div className="bg-white border border-wp-border p-4">
             <h3 className="text-[10px] uppercase tracking-[0.2em] text-wp-gray font-bold mb-3">Workflow</h3>
             <div className="space-y-2">

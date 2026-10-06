@@ -90,7 +90,7 @@ export default function PhotoEssay({ title, dek, byline, photos }: Props) {
                   (rightSide ? 'md:order-1' : 'md:order-2')
                 }
               >
-                <div className="relative w-full aspect-[3/2] bg-gray-100 overflow-hidden">
+                <div className="relative w-full aspect-[3/2] bg-wp-light overflow-hidden">
                   <ArticleImage
                     src={p.src}
                     alt={p.caption || ''}

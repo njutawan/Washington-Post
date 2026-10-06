@@ -186,7 +186,7 @@ function SearchInner() {
   const suggestions = ['Government shutdown', 'Election 2026', 'Federal Reserve', 'NFL', 'Oil prices', 'Artificial Intelligence'];
 
   return (
-    <main id="main-content" className="wp-container py-6">
+    <>
       <div className="mb-6">
         <p className="kicker text-wp-red mb-3">Search</p>
         <form onSubmit={onSubmit} className="flex items-center border-b-2 border-wp-black">
@@ -264,7 +264,7 @@ function SearchInner() {
                   <Link href={`/article/${a.slug}`} className="group block">
                     <div className="flex gap-4">
                       {a.image && (
-                        <div className="hidden sm:block w-36 h-24 flex-shrink-0 overflow-hidden bg-gray-100 relative">
+                        <div className="hidden sm:block w-36 h-24 flex-shrink-0 overflow-hidden bg-wp-light relative">
                           <ArticleImage
                             src={a.image}
                             alt={a.title}
@@ -332,7 +332,7 @@ function SearchInner() {
           </ul>
         </div>
       )}
-    </main>
+    </>
   );
 }
 
@@ -340,9 +340,11 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen bg-wp-cream">
       <Masthead />
-      <Suspense fallback={<div className="p-8 font-sans text-wp-gray">Loading…</div>}>
-        <SearchInner />
-      </Suspense>
+      <main id="main-content" className="wp-container py-6">
+        <Suspense fallback={<div role="status" className="p-8 font-sans text-wp-gray">Loading…</div>}>
+          <SearchInner />
+        </Suspense>
+      </main>
       <Footer />
     </div>
   );

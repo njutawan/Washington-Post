@@ -43,7 +43,7 @@ export default function PodcastPlayer() {
           </div>
           <p className="text-xs font-sans text-wp-gray mb-2 line-clamp-2">{episode.description}</p>
           <div className="h-1 bg-wp-border overflow-hidden">
-            <div className="h-full bg-wp-red transition-all" style={{ width: `${pct}%` }} role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} />
+            <div className="h-full bg-wp-red transition-all" style={{ width: `${pct}%` }} role="progressbar" aria-label="Episode progress" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} />
           </div>
         </div>
       </div>

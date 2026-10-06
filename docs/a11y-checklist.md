@@ -7,6 +7,19 @@ Run them with:
 npm run e2e -- accessibility.spec.ts
 ```
 
+No browser available (e.g. sandboxed dev environments)? Use the jsdom-based
+approximation of the same axe config — it catches all non-contrast violations
+(labels, landmarks, heading order, ARIA names) without Playwright:
+
+```
+npm run build && (npm run start &)
+npm run axe:local            # all 11 routes × light/dark
+npm run axe:local /games     # single route; add --light / --dark to filter
+```
+
+Caveat: jsdom has no layout engine, so `color-contrast` findings there are
+approximate — treat the CI Playwright run as the source of truth for contrast.
+
 Those cover everything a machine can: WCAG 2.0/2.1 AA rules in both light and
 dark modes, skip-link focus, Tab-order sanity, form labels, alt text,
 landmarks, heading hierarchy. **Screen readers cannot be driven from CI**, so

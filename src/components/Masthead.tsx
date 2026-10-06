@@ -91,7 +91,7 @@ export default function Masthead() {
       </div>
 
       {/* Primary nav: horizontal scroll on mobile/tablet, centered on desktop */}
-      <nav className="border-t-2 border-b border-wp-black bg-wp-cream">
+      <nav aria-label="News sections" className="border-t-2 border-b border-wp-black bg-wp-cream">
         <div className="wp-container relative scroll-fade">
           <ul className="flex items-center gap-4 md:gap-5 py-2 overflow-x-auto no-scrollbar -mx-1 px-1 md:mx-0 md:px-0 md:justify-center md:overflow-visible">
             {topNav.map((item) => (
@@ -111,7 +111,7 @@ export default function Masthead() {
       </nav>
 
       {/* Secondary nav: visible & scrollable on tablet+, compact chips on mobile */}
-      <nav className="border-b border-wp-border bg-white/40">
+      <nav aria-label="More sections" className="border-b border-wp-border bg-white/40">
         <div className="wp-container relative scroll-fade">
           <ul className="flex items-center gap-4 md:gap-6 py-1.5 overflow-x-auto no-scrollbar -mx-1 px-1 md:mx-0 md:px-0 md:justify-center md:overflow-visible text-[11px] md:text-[12px]">
             {subNav.map((item) => (

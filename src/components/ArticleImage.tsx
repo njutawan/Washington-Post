@@ -79,7 +79,7 @@ export default function ArticleImage({
       {(caption || credit) && (
         <figcaption className="mt-2 text-[13px] text-wp-gray font-sans leading-snug flex justify-between gap-4">
           {caption && <span className="italic">{caption}</span>}
-          {credit && <span className="flex-shrink-0 text-wp-gray/70">{credit}</span>}
+          {credit && <span className="flex-shrink-0 text-wp-gray">{credit}</span>}
         </figcaption>
       )}
     </figure>

@@ -110,7 +110,7 @@ export default async function SectionPage({ params }: { params: Promise<{ sectio
 
         {/* Sub-navigation (Politics → White House, Congress, Courts…) */}
         {subNavItems.length > 0 && (
-          <nav className="border-b border-wp-border mb-6 -mx-4 sm:mx-0 overflow-x-auto">
+          <nav aria-label="Subsections" className="border-b border-wp-border mb-6 -mx-4 sm:mx-0 overflow-x-auto">
             <ul className="flex gap-6 px-4 sm:px-0 whitespace-nowrap">
               {parentSlug && parentHier && (
                 <li>

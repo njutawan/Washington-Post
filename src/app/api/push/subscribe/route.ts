@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addSubscription, removeSubscription } from '@/lib/push';
+import { csrfBlock } from '@/lib/csrf';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +23,8 @@ function cleanTopics(raw: unknown): string[] | undefined {
 }
 
 export async function POST(req: NextRequest) {
+  const blocked = csrfBlock(req);
+  if (blocked) return blocked;
   let body: any = {};
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: 'invalid json' }, { status: 400 });
@@ -48,6 +51,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const blocked = csrfBlock(req);
+  if (blocked) return blocked;
   let body: any = {};
   try { body = await req.json(); } catch {}
   const endpoint = body?.endpoint || body?.subscription?.endpoint;

@@ -29,7 +29,7 @@ function LeadCard({ article }: { article: Article }) {
   return (
     <article className="pb-6 border-b border-wp-border md:border-b-0 md:pb-0" data-vt-card>
       {article.image && (
-        <Link href={href(article)} className="block mb-4 overflow-hidden bg-gray-100 relative">
+        <Link href={href(article)} className="block mb-4 overflow-hidden bg-wp-light relative">
           <div className="relative w-full h-[360px] md:h-[480px]" data-vt-hero>
             <ArticleImage
               src={article.image}
@@ -71,7 +71,7 @@ function LargeCard({ article, showCategory }: { article: Article; showCategory: 
   return (
     <article className="pb-5 border-b border-wp-border" data-vt-card>
       {article.image && (
-        <Link href={href(article)} className="block mb-3 overflow-hidden bg-gray-100 relative">
+        <Link href={href(article)} className="block mb-3 overflow-hidden bg-wp-light relative">
           <div className="relative w-full h-[220px] md:h-[260px]" data-vt-hero>
             <ArticleImage
               src={article.image}
@@ -104,7 +104,7 @@ function MediumCard({ article, showCategory }: { article: Article; showCategory:
   return (
     <article className="flex gap-4 pb-5 border-b border-wp-border" data-vt-card>
       {article.image && (
-        <Link href={href(article)} className="block w-1/3 flex-shrink-0 overflow-hidden bg-gray-100 relative">
+        <Link href={href(article)} className="block w-1/3 flex-shrink-0 overflow-hidden bg-wp-light relative">
           <div className="relative w-full h-[110px] md:h-[130px]" data-vt-hero>
             <ArticleImage
               src={article.image}
@@ -182,7 +182,7 @@ function OpinionCard({ article }: { article: Article }) {
   return (
     <article className="flex gap-3 pb-4 border-b border-wp-border">
       {article.image && (
-        <Link href={href(article)} className="block w-16 h-16 flex-shrink-0 overflow-hidden rounded-full bg-gray-100 relative">
+        <Link href={href(article)} className="block w-16 h-16 flex-shrink-0 overflow-hidden rounded-full bg-wp-light relative">
           <ArticleImage
             src={article.image}
             alt={article.byline || article.title}

@@ -30,7 +30,7 @@ export default async function MediaLibrary() {
           'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&q=80',
           'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&q=80',
         ].map((src, i) => (
-          <div key={i} className="relative aspect-square bg-gray-100 overflow-hidden group border border-wp-border">
+          <div key={i} className="relative aspect-square bg-wp-light overflow-hidden group border border-wp-border">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={src} alt="" className="w-full h-full object-cover group-hover:opacity-90 transition" loading="lazy" />
             <div className="absolute inset-x-0 bottom-0 bg-black/70 text-white text-[10px] p-1.5 font-mono opacity-0 group-hover:opacity-100 transition">
@@ -39,7 +39,7 @@ export default async function MediaLibrary() {
           </div>
         ))}
         {items.map((m) => (
-          <div key={m.id} className="relative aspect-square bg-gray-100 overflow-hidden group border border-wp-border">
+          <div key={m.id} className="relative aspect-square bg-wp-light overflow-hidden group border border-wp-border">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={m.url} alt="" className="w-full h-full object-cover" loading="lazy" />
           </div>

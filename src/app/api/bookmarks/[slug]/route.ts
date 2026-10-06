@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { toggleBookmark } from '@/lib/db';
+import { csrfBlock } from '@/lib/csrf';
 
-export async function POST(_: Request, { params }: { params: Promise<{ slug: string }> }) {
+export async function POST(req: Request, { params }: { params: Promise<{ slug: string }> }) {
+  const blocked = csrfBlock(req);
+  if (blocked) return blocked;
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Sign in required' }, { status: 401 });

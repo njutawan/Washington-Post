@@ -49,7 +49,7 @@ export default function LeadSplit({ article }: { article: Article }) {
         <div className="order-1 md:order-2">
           <Link
             href={`/article/${article.slug}`}
-            className="block overflow-hidden bg-gray-100 relative group"
+            className="block overflow-hidden bg-wp-light relative group"
             style={{ viewTransitionName: 'vt-hero', contain: 'paint' }}
           >
             <div className="relative w-full h-[280px] sm:h-[360px] md:h-[420px] lg:h-[480px]">

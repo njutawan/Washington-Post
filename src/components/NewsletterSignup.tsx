@@ -65,7 +65,7 @@ export default function NewsletterSignup({ variant = 'inline' }: { variant?: 'in
   // Inline variant (for footer)
   return (
     <div>
-      <h4 className="kicker text-white mb-2 text-[13px]">Newsletters</h4>
+      <h3 className="kicker text-white mb-2 text-[13px]">Newsletters</h3>
       <p className="text-sm font-sans text-gray-300 mb-3">
         Get the day\u2019s top stories delivered to your inbox each morning.
       </p>
@@ -76,7 +76,7 @@ export default function NewsletterSignup({ variant = 'inline' }: { variant?: 'in
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Your email"
           required
-          className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 text-white placeholder:text-gray-500 text-sm font-sans outline-none focus:border-white"
+          className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 text-white placeholder:text-gray-400 text-sm font-sans outline-none focus:border-white"
           aria-label="Email address"
         />
         <button

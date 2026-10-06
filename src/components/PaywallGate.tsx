@@ -98,7 +98,7 @@ export default function PaywallGate({
           {children}
         </div>
         {blocked && !dismissed && (
-          <div className="absolute inset-x-0 bottom-0 h-80 bg-gradient-to-t from-wp-cream via-wp-cream/90 to-transparent pointer-events-none flex items-end justify-center pb-8">
+          <div className="absolute inset-x-0 bottom-0 h-80 paywall-fade pointer-events-none flex items-end justify-center pb-8">
             <button
               onClick={() => setShowModal(true)}
               className="pointer-events-auto bg-wp-black text-white px-8 py-3 font-sans font-bold uppercase text-sm tracking-wider hover:bg-wp-red transition"

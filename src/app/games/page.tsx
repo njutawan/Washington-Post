@@ -36,7 +36,7 @@ export default function GamesPage() {
           {GAMES.map((g) => (
             <a key={g.name} href={`#${g.name.toLowerCase().replace(/\s+/g, '-')}`} className="block bg-white border-2 border-wp-black p-3 hover:border-wp-red transition group">
               <div className={`${g.color} text-white text-[10px] font-sans font-bold uppercase tracking-widest px-2 py-0.5 inline-block mb-2`}>{g.cadence}</div>
-              <h3 className="headline text-base font-bold leading-tight group-hover:text-wp-link">{g.name}</h3>
+              <h2 className="headline text-base font-bold leading-tight group-hover:text-wp-link">{g.name}</h2>
               <p className="byline text-wp-gray text-[11px] mt-1">{g.blurb}</p>
             </a>
           ))}

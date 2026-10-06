@@ -255,7 +255,7 @@ CI (`.github/workflows/ci.yml`) mengotomatiskan: **audit keamanan → type-check
 VERCEL_TOKEN · VERCEL_ORG_ID · VERCEL_PROJECT_ID
 ```
 
-Lalu setiap push ke `main` → build → tes → deploy produksi. ✨
+Lalu setiap push ke `main` → build → tes → deploy produksi. ✨ (Sebelum secrets diisi, job deploy otomatis di-skip agar status CI tidak merah.)
 
 Alternatif: deploy manual ke platform Node.js mana pun:
 

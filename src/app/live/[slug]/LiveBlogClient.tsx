@@ -110,9 +110,9 @@ export default function LiveBlogPageClient({
                         </span>
                       )}
                     </div>
-                    <h3 className="headline text-xl md:text-2xl leading-tight mb-2 hover:text-wp-link">
+                    <h2 className="headline text-xl md:text-2xl leading-tight mb-2 hover:text-wp-link">
                       {u.title}
-                    </h3>
+                    </h2>
                     <p className="font-body text-lg leading-relaxed text-wp-ink">{u.body}</p>
                     {u.byline && (
                       <p className="byline mt-3 text-wp-gray">— {u.byline}</p>

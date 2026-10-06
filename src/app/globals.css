@@ -14,6 +14,19 @@
   --wp-light: #f1ede4;
   --wp-surface: #ffffff;
   --wp-shadow: rgba(18, 18, 18, 0.06);
+  /* RGB triplets consumed by Tailwind utilities (tailwind.config.ts) so the
+   * wp color utilities adapt to .dark. Light values match the config hexes
+   * exactly (utilities compile to identical colors). */
+  --wp-black-ch: 18 18 18;
+  --wp-ink-ch: 43 43 43;
+  --wp-ink-soft-ch: 74 74 74;
+  --wp-gray-ch: 107 107 107;
+  --wp-light-ch: 245 243 238;
+  --wp-cream-ch: 250 249 246;
+  --wp-border-ch: 220 220 220;
+  --wp-red-ch: 180 0 1;
+  --wp-link-ch: 26 110 197;
+  --wp-green-ch: 30 126 52;
   --sat: env(safe-area-inset-top);
   --sab: env(safe-area-inset-bottom);
   --sal: env(safe-area-inset-left);
@@ -40,6 +53,36 @@
   --wp-surface: #1a1a1a;
   --wp-shadow: rgba(0, 0, 0, 0.4);
   color-scheme: dark;
+  /* Dark triplets mirror the hexes above (utilities adapt automatically). */
+  --wp-black-ch: 240 237 230;
+  --wp-ink-ch: 228 224 214;
+  --wp-ink-soft-ch: 181 176 166;
+  --wp-gray-ch: 181 176 166;
+  --wp-light-ch: 31 31 31;
+  --wp-cream-ch: 18 18 18;
+  --wp-border-ch: 58 58 58;
+  --wp-red-ch: 255 85 85;
+  --wp-link-ch: 127 179 230;
+  --wp-green-ch: 111 212 139;
+}
+
+/* Dark-mode re-pins: surfaces that MUST stay dark because they carry static
+ * white text (buttons, footer, toasts, skip link). Unlayered so they beat the
+ * channel-driven utilities; translucent (/10…) and default-palette variants
+ * are separate classes and are unaffected. */
+.dark .bg-wp-black,
+.dark .hover\:bg-wp-black:hover,
+.dark .focus\:bg-wp-black:focus { background-color: #121212; }
+.dark .bg-wp-red,
+.dark .hover\:bg-wp-red:hover { background-color: #b40001; }
+.dark .bg-wp-green { background-color: #1e7e34; }
+/* Cards/panels follow the surface token instead of staying paper-white. */
+.dark .bg-white { background-color: var(--wp-surface); }
+
+/* Paywall fade: channel-driven gradient (Tailwind v3 cannot derive the
+ * transparent stop from var()-based colors, so this is hand-rolled). */
+.paywall-fade {
+  background: linear-gradient(to top, rgb(var(--wp-cream-ch)) 30%, rgb(var(--wp-cream-ch) / 0));
 }
 .dark html, .dark body { background-color: var(--wp-cream); color: var(--wp-black); }
 .dark .scroll-fade::after { background: linear-gradient(to left, var(--wp-cream), transparent); }
@@ -51,7 +94,6 @@
   background: linear-gradient(90deg, #1f1f1f 0%, #2a2a2a 50%, #1f1f1f 100%);
   background-size: 200% 100%;
 }
-.dark .byline, .dark .dek { color: var(--wp-gray); }
 .dark .article-body p:first-of-type::first-letter { color: var(--wp-red); }
 .dark .rule-top, .dark .rule-top-thick, .dark .rule-bottom-thick { border-color: var(--wp-border); }
 .dark .rule-bottom { border-color: var(--wp-border); }
@@ -170,16 +212,20 @@ body.no-scroll {
   font-size: 0.7rem;
 }
 
-.byline {
-  font-family: 'Source Sans 3', 'Franklin Gothic Medium', 'Franklin Gothic', Arial, sans-serif;
-  font-size: 0.8rem;
-  color: #4a4a4a;
-}
+@layer components {
+  /* Layered (not unlayered) so Tailwind text-* utilities placed on the same
+   * element win — e.g. text-gray-200 deks on dark photo heroes. */
+  .byline {
+    font-family: 'Source Sans 3', 'Franklin Gothic Medium', 'Franklin Gothic', Arial, sans-serif;
+    font-size: 0.8rem;
+    color: rgb(var(--wp-ink-soft-ch, 74 74 74));
+  }
 
-.dek {
-  font-family: 'Source Serif Pro', Georgia, 'Times New Roman', serif;
-  color: #4a4a4a;
-  line-height: 1.35;
+  .dek {
+    font-family: 'Source Serif Pro', Georgia, 'Times New Roman', serif;
+    color: rgb(var(--wp-ink-soft-ch, 74 74 74));
+    line-height: 1.35;
+  }
 }
 
 .rule-top { border-top: 1px solid #121212; }
@@ -235,7 +281,7 @@ body.no-scroll {
   font-family: 'Playfair Display', Georgia, serif;
   font-weight: 900;
   font-size: 2.2rem;
-  color: #b40001;
+  color: var(--wp-red);
   line-height: 1;
 }
 
@@ -259,7 +305,7 @@ body.no-scroll {
 
 .link-hover:hover {
   text-decoration: underline;
-  color: #1a6ec5;
+  color: var(--wp-link);
 }
 
 :focus-visible {
@@ -382,18 +428,18 @@ body.no-scroll {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--wp-black);
-  background: white;
+  background: var(--wp-surface);
   text-decoration: none;
   transition: all 0.15s;
 }
-.topic-chip:hover { background: var(--wp-black); color: white; border-color: var(--wp-black); }
+.topic-chip:hover { background: #121212; color: white; border-color: #121212; }
 
 /* Inline newsletter signup */
 .newsletter-inline {
   display: grid;
   grid-template-columns: 1fr;
   gap: 16px;
-  background: white;
+  background: var(--wp-surface);
   border: 2px solid var(--wp-black);
   padding: 24px;
   margin: 2.5rem 0;
@@ -436,7 +482,7 @@ body.no-scroll {
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
-  background: var(--wp-black);
+  background: #121212;
   color: white;
   border-radius: 4px;
   font-family: var(--font-sans), sans-serif;
@@ -446,7 +492,7 @@ body.no-scroll {
 .audio-bar button {
   width: 36px; height: 36px;
   border-radius: 50%;
-  background: var(--wp-red);
+  background: #b40001;
   color: white;
   display: inline-flex;
   align-items: center;
@@ -484,7 +530,7 @@ body.no-scroll {
 
 /* Election widget */
 .election-widget {
-  background: white;
+  background: var(--wp-surface);
   border: 2px solid var(--wp-black);
   padding: 16px;
   margin: 2rem 0;
@@ -519,8 +565,8 @@ body.no-scroll {
 .ew-bar .dem { background: #1a6ec5; }
 .ew-bar .gop { background: #b40001; }
 .ew-pct { font-weight: 800; min-width: 42px; text-align: right; }
-.ew-pct.dem { color: #1a6ec5; }
-.ew-pct.gop { color: #b40001; }
+.ew-pct.dem { color: var(--wp-link); }
+.ew-pct.gop { color: var(--wp-red); }
 
 /* Article text-size toggle */
 #article-body[data-text-size="sm"] .font-body { font-size: 16px !important; line-height: 1.6 !important; }

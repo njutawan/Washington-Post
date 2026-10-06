@@ -86,6 +86,7 @@ export default function SudokuGame() {
                 <button
                   key={`${r}-${c}`}
                   onClick={() => setSelected({ r, c })}
+                  aria-label={`Row ${r + 1}, column ${c + 1}${v !== 0 ? `, ${v}` : ', empty'}${fixed[r][c] ? ', given' : ''}`}
                   className={
                     'aspect-square flex items-center justify-center font-serif text-xl md:text-2xl font-black tabular-nums transition ' +
                     borderR + ' ' + borderB + ' ' +

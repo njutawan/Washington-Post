@@ -184,7 +184,7 @@ export default function AdSlot({
     <div
       ref={ref}
       data-ad-slot={slot}
-      aria-label={label}
+      aria-label={`${label} (${slot.replace(/-/g, ' ')})`}
       role="complementary"
       className={`ad-slot mx-auto ${stickyCls} ${className}`}
     >

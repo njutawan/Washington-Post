@@ -61,7 +61,7 @@ export default function LiveTicker() {
             <div className="flex items-center ticker-copy">
               {breakingNews.map((item) => (
                 <span key={item.id} className="flex items-center pr-10">
-                  <Link href={item.href} className="text-sm font-sans hover:text-wp-red transition flex items-center gap-2">
+                  <Link href={item.href} className="text-sm font-sans text-white hover:text-red-300 transition flex items-center gap-2">
                     {item.live && <span className="inline-block w-2 h-2 bg-wp-red rounded-full animate-pulse flex-shrink-0" aria-label="LIVE" />}
                     <span className="truncate max-w-[60ch]">{item.text}</span>
                   </Link>
@@ -73,7 +73,7 @@ export default function LiveTicker() {
             <div className="flex items-center ticker-copy" aria-hidden="true">
               {breakingNews.map((item) => (
                 <span key={item.id} className="flex items-center pr-10">
-                  <Link href={item.href} tabIndex={-1} className="text-sm font-sans flex items-center gap-2 pointer-events-auto">
+                  <Link href={item.href} tabIndex={-1} className="text-sm font-sans text-white flex items-center gap-2 pointer-events-auto">
                     {item.live && <span className="inline-block w-2 h-2 bg-wp-red rounded-full animate-pulse flex-shrink-0" />}
                     <span className="truncate max-w-[60ch]">{item.text}</span>
                   </Link>
