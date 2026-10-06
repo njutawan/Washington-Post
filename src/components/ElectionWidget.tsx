@@ -96,7 +96,7 @@ export default function ElectionWidget({
                 {presidential.candidates[0].name}
               </p>
             </div>
-            <div className="flex-1 mx-4 h-2 rounded-full overflow-hidden bg-gray-200 flex">
+            <div className="flex-1 mx-4 h-2 rounded-full overflow-hidden bg-wp-border flex">
               <div
                 className="bg-[#1a6ec5] h-full"
                 style={{ width: `${((presidential.candidates[0].ev || 0) / 538) * 100}%` }}

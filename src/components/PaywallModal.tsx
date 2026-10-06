@@ -127,7 +127,7 @@ export default function PaywallModal({ open, onClose }: { open: boolean; onClose
             >
               Already a subscriber? Sign in
             </Link>
-            <span className="hidden sm:inline text-wp-border">|</span>
+            <span className="hidden sm:inline text-wp-gray">|</span>
             <button
               onClick={() => {
                 // Demo: mark as subscriber for session and continue
@@ -142,7 +142,7 @@ export default function PaywallModal({ open, onClose }: { open: boolean; onClose
             </button>
             {onClose && (
               <>
-                <span className="hidden sm:inline text-wp-border">|</span>
+                <span className="hidden sm:inline text-wp-gray">|</span>
                 <button onClick={() => { dismiss(); onClose(); }} className="hover:text-wp-black underline py-1 tap-target">
                   Read one more free article
                 </button>

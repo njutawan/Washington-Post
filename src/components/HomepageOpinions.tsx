@@ -57,7 +57,7 @@ export default function HomepageOpinions() {
                 aria-label={`${displayName} — ${op.title}`}
               >
                 {avatar ? (
-                  <div className="absolute inset-0 rounded-full overflow-hidden ring-2 ring-wp-black/10 group-hover:ring-wp-red transition bg-gray-200">
+                  <div className="absolute inset-0 rounded-full overflow-hidden ring-2 ring-wp-black/10 group-hover:ring-wp-red transition bg-wp-border">
                     <ArticleImage
                       src={avatar}
                       alt={displayName}

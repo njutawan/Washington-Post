@@ -218,8 +218,8 @@ export default function Lightbox({
         <figcaption className="mt-3 max-w-2xl text-center text-sm font-sans text-gray-300 px-4">
           {p.caption && <span className="italic">{p.caption}</span>}
           {p.caption && p.credit && ' '}
-          {p.credit && <span className="text-gray-500">({p.credit})</span>}
-          <span className="block mt-1 text-xs text-gray-500">
+          {p.credit && <span className="text-gray-400">({p.credit})</span>}
+          <span className="block mt-1 text-xs text-gray-400">
             {i + 1} / {photos.length}
             {scale > 1 && <span className="ml-3">· {Math.round(scale * 100)}%</span>}
           </span>

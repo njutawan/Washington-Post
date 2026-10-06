@@ -224,7 +224,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             {videoUrl ? (
               <div className="dual-hero two-up mb-6 md:mb-8 -mx-4 sm:mx-0">
                 {article.image && (
-                  <div className="relative h-[240px] sm:h-[320px] md:h-[380px] overflow-hidden bg-gray-100">
+                  <div className="relative h-[240px] sm:h-[320px] md:h-[380px] overflow-hidden bg-wp-light">
                     <ArticleImage src={article.image} alt={article.caption || article.title} fill priority sizes="50vw" className="object-cover" />
                   </div>
                 )}
@@ -246,22 +246,22 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               </div>
             ) : secondImage ? (
               <div className="dual-hero two-up mb-6 md:mb-8 -mx-4 sm:mx-0">
-                <div className="relative h-[240px] sm:h-[320px] md:h-[380px] overflow-hidden bg-gray-100">
+                <div className="relative h-[240px] sm:h-[320px] md:h-[380px] overflow-hidden bg-wp-light">
                   <ArticleImage src={article.image} alt={article.caption || article.title} fill priority sizes="50vw" className="object-cover" />
                 </div>
-                <div className="relative h-[240px] sm:h-[320px] md:h-[380px] overflow-hidden bg-gray-100">
+                <div className="relative h-[240px] sm:h-[320px] md:h-[380px] overflow-hidden bg-wp-light">
                   <ArticleImage src={secondImage} alt={secondCaption || article.title} fill sizes="50vw" className="object-cover" />
                 </div>
                 {(article.caption || secondCaption) && (
                   <figcaption className="col-span-2 text-[12px] font-sans text-wp-gray mt-2 italic">
                     {article.caption}{secondCaption ? ` | ${secondCaption}` : ''}
-                    {article.credit && <span className="ml-2 not-italic text-wp-gray/70">{article.credit}{secondCredit && `; ${secondCredit}`}</span>}
+                    {article.credit && <span className="ml-2 not-italic text-wp-gray">{article.credit}{secondCredit && `; ${secondCredit}`}</span>}
                   </figcaption>
                 )}
               </div>
             ) : article.image ? (
               <figure className="mb-6 md:mb-8 -mx-4 sm:mx-0" style={{ viewTransitionName: 'vt-hero', contain: 'paint' }}>
-                <div className="relative w-full h-[240px] sm:h-[320px] md:h-[420px] lg:h-[480px] overflow-hidden bg-gray-100">
+                <div className="relative w-full h-[240px] sm:h-[320px] md:h-[420px] lg:h-[480px] overflow-hidden bg-wp-light">
                   <ArticleImage
                     src={article.image}
                     alt={article.caption || article.title}
@@ -325,7 +325,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
                 {related.map((a) => (
                   <Link key={a.id} href={`/article/${a.slug}`} className="block group">
                     {a.image && (
-                      <div className="relative overflow-hidden bg-gray-100 mb-3 h-40 w-full">
+                      <div className="relative overflow-hidden bg-wp-light mb-3 h-40 w-full">
                         <ArticleImage
                           src={a.image}
                           alt={a.title}

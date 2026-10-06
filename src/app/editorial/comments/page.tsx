@@ -48,7 +48,7 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
             </div>
             <form action={moderate} className="flex flex-col gap-2">
               <input type="hidden" name="id" value={c.id} />
-              <button name="status" value="approved" className="px-3 py-1 text-[10px] uppercase tracking-widest font-bold border border-green-600 text-green-700 hover:bg-green-600 hover:text-white">Approve</button>
+              <button name="status" value="approved" className="px-3 py-1 text-[10px] uppercase tracking-widest font-bold border border-wp-green text-wp-green hover:bg-wp-green hover:text-white">Approve</button>
               <button name="status" value="rejected" className="px-3 py-1 text-[10px] uppercase tracking-widest font-bold border border-wp-red text-wp-red hover:bg-wp-red hover:text-white">Reject</button>
               {c.status !== 'pending' && <input type="hidden" name="status" value="pending" />}
             </form>

@@ -78,7 +78,7 @@ export function useMDXComponents(components: MDXComponents = {}): MDXComponents 
       const isRemote = /^https?:\/\//.test(src);
       return (
         <figure className="my-6 -mx-4 sm:mx-0">
-          <div className="relative w-full h-auto overflow-hidden bg-gray-100">
+          <div className="relative w-full h-auto overflow-hidden bg-wp-light">
             {isRemote ? (
               <ArticleImage src={src} alt={alt} width={800} height={500} className="object-cover w-full h-auto" />
             ) : (

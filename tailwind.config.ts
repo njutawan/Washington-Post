@@ -11,17 +11,21 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Channel-based CSS vars so utilities follow .dark (see globals.css
+        // --wp-*-ch triplets). The documented v3 pattern keeps opacity
+        // modifiers (/70, /20, ...) working. `dark`/`yellow` stay static:
+        // dark is unused, yellow is only a translucent read-aloud highlight.
         wp: {
-          black: '#121212',
+          black: 'rgb(var(--wp-black-ch) / <alpha-value>)',
           dark: '#1a1a1a',
-          ink: '#2b2b2b',
-          gray: '#6b6b6b',
-          light: '#f5f3ee',
-          cream: '#faf9f6',
-          border: '#dcdcdc',
-          red: '#b40001',
-          link: '#1a6ec5',
-          green: '#1e7e34',
+          ink: 'rgb(var(--wp-ink-ch) / <alpha-value>)',
+          gray: 'rgb(var(--wp-gray-ch) / <alpha-value>)',
+          light: 'rgb(var(--wp-light-ch) / <alpha-value>)',
+          cream: 'rgb(var(--wp-cream-ch) / <alpha-value>)',
+          border: 'rgb(var(--wp-border-ch) / <alpha-value>)',
+          red: 'rgb(var(--wp-red-ch) / <alpha-value>)',
+          link: 'rgb(var(--wp-link-ch) / <alpha-value>)',
+          green: 'rgb(var(--wp-green-ch) / <alpha-value>)',
           yellow: '#fff3bf',
         },
       },

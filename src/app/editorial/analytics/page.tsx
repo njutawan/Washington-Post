@@ -32,7 +32,7 @@ export default async function NewsroomAnalytics() {
           <div key={l} className="bg-white border border-wp-border p-4">
             <div className="text-[10px] uppercase tracking-widest text-wp-gray font-bold">{l}</div>
             <div className="text-3xl font-display font-black tabular-nums mt-1">{v}</div>
-            <div className="text-[11px] text-green-700 font-sans">{d}</div>
+            <div className="text-[11px] text-wp-green font-sans">{d}</div>
           </div>
         ))}
       </div>
@@ -59,7 +59,7 @@ export default async function NewsroomAnalytics() {
                   </td>
                   <td className="py-2 px-3 text-xs hidden md:table-cell">{s.category}</td>
                   <td className="py-2 px-3 text-right font-mono tabular-nums">{views.toLocaleString()}</td>
-                  <td className="py-2 px-3 text-right font-mono tabular-nums text-green-700 hidden md:table-cell">{conv}%</td>
+                  <td className="py-2 px-3 text-right font-mono tabular-nums text-wp-green hidden md:table-cell">{conv}%</td>
                 </tr>
               );
             })}

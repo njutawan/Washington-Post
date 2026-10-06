@@ -264,7 +264,7 @@ function SearchInner() {
                   <Link href={`/article/${a.slug}`} className="group block">
                     <div className="flex gap-4">
                       {a.image && (
-                        <div className="hidden sm:block w-36 h-24 flex-shrink-0 overflow-hidden bg-gray-100 relative">
+                        <div className="hidden sm:block w-36 h-24 flex-shrink-0 overflow-hidden bg-wp-light relative">
                           <ArticleImage
                             src={a.image}
                             alt={a.title}

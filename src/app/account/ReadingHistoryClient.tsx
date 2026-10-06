@@ -121,7 +121,7 @@ export default function ReadingHistoryClient() {
           <li key={h.slug} className="py-4">
             <Link href={`/article/${h.slug}`} className="flex gap-4 group">
               {h.image ? (
-                <div className="w-24 h-20 sm:w-28 sm:h-20 flex-shrink-0 bg-gray-100 overflow-hidden relative">
+                <div className="w-24 h-20 sm:w-28 sm:h-20 flex-shrink-0 bg-wp-light overflow-hidden relative">
                   <ArticleImage src={h.image} alt={h.title || ''} fill sizes="112px" className="object-cover" />
                 </div>
               ) : (

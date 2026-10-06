@@ -60,7 +60,7 @@ export default function OpinionsPage() {
             <Link href={`/article/${lead.slug}`} className="group block">
               <div className="flex gap-5 items-start">
                 {lead.image && (
-                  <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-44 md:h-44 rounded-full overflow-hidden bg-gray-100 flex-shrink-0 border-4 border-wp-black relative shadow-md">
+                  <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-44 md:h-44 rounded-full overflow-hidden bg-wp-light flex-shrink-0 border-4 border-wp-black relative shadow-md">
                     <ArticleImage src={lead.image} alt={lead.byline || ''} fill rounded sizes="(max-width: 640px) 96px, (max-width: 768px) 128px, 176px" className="object-cover" />
                   </div>
                 )}
@@ -83,7 +83,7 @@ export default function OpinionsPage() {
             {topOpinions.map((op) => (
               <Link key={op.id} href={`/article/${op.slug}`} className="group flex gap-3 items-start pb-5 border-b border-wp-border last:border-b-0 last:pb-0">
                 {op.image ? (
-                  <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 flex-shrink-0 relative border-2 border-wp-black">
+                  <div className="w-16 h-16 rounded-full overflow-hidden bg-wp-light flex-shrink-0 relative border-2 border-wp-black">
                     <ArticleImage src={op.image} alt={op.byline || ''} fill rounded sizes="64px" className="object-cover" />
                   </div>
                 ) : (
@@ -117,7 +117,7 @@ export default function OpinionsPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 md:gap-5">
             {featuredColumnists.map((c) => (
               <Link key={c.id} href={`/author/${c.slug}`} className="text-center group block">
-                <div className="w-24 h-24 sm:w-28 md:w-32 h-24 sm:h-28 md:h-32 rounded-full overflow-hidden bg-gray-100 mx-auto mb-3 border-[3px] border-wp-black relative shadow-md group-hover:border-wp-red group-hover:shadow-[0_0_0_3px_rgba(178,20,20,1)] transition">
+                <div className="w-24 h-24 sm:w-28 md:w-32 h-24 sm:h-28 md:h-32 rounded-full overflow-hidden bg-wp-light mx-auto mb-3 border-[3px] border-wp-black relative shadow-md group-hover:border-wp-red group-hover:shadow-[0_0_0_3px_rgba(178,20,20,1)] transition">
                   {c.avatar ? (
                     <ArticleImage src={c.avatar} alt={c.name} fill rounded sizes="(max-width: 640px) 96px, 128px" className="object-cover" />
                   ) : (
