@@ -22,10 +22,12 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 
-      # Gate on moderate+ (see SECURITY_AUDIT.md: remaining low-severity
-      # advisories are a dev-only elliptic chain with no published fix)
+      # Allowlist-based audit gate (see scripts/audit-gate.mjs + SECURITY_AUDIT.md):
+      # fails on any NEW moderate+ advisory, while acknowledging the few with
+      # no published fix and negligible exposure. Raw `--audit-level=moderate`
+      # would be red forever on those (braces, sprintf-js, webpack-dev-middleware).
       - name: Dependency security audit
-        run: npm audit --audit-level=moderate
+        run: npm run audit:ci
 
       - name: Type check
         run: npx tsc --noEmit

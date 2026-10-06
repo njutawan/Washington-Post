@@ -1,5 +1,49 @@
 # Dependency Security Audit
 
+## Re-audit addendum — 2026-10-06
+
+**Trigger:** the CI gate (`npm audit --audit-level=moderate`) turned red on newly
+published advisories — 27 vulnerabilities (5 low, 8 moderate, 14 high), including
+8 in the production tree that was clean on 2026-09-10.
+
+### Fixed
+
+| Advisory | Severity | Path | Fix |
+|---|---|---|---|
+| `brace-expansion` (GHSA-q2hr-2g5m-vwhr, GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p) | HIGH | transitive | `npm audit fix` (non-breaking) |
+| `source-map-js` (GHSA-68fv-2mgg-jv7q) | HIGH | transitive | `npm audit fix` (non-breaking) |
+| `fast-uri` (GHSA-hrr3-gc8f-f4qj) | MODERATE | transitive | `npm audit fix` (non-breaking) |
+| `postcss-selector-parser` (GHSA-rj75-hqrm-r3gf) | MODERATE | tailwindcss 3.4 / @tailwindcss/typography | `overrides` pin to `^7.1.6` in `package.json` (all copies now 7.1.6; production build + CSS output verified — 71 KB bundle, responsive rules and custom utilities intact) |
+
+Result: 27 → 22 total; every remaining moderate+ advisory has **no published fix**
+(see below).
+
+### New accepted risks (no fix available upstream)
+
+| Advisory | Severity | Why accepted |
+|---|---|---|
+| `braces` (GHSA-vfj7-8cjw-p6xm) | HIGH | No patched release exists (3.0.3 is latest); the only audit "fix" is a breaking tailwindcss v3→v4 migration. Reachable solely via build-time tooling (tailwind content scanning, chokidar watch, eslint) parsing the repo's own trusted configs — no user input reaches the glob parser. Re-check when planning the tailwind v4 migration. |
+| `sprintf-js` (GHSA-hp3w-g68c-fv3c) | MODERATE | Advisory affects **all** sprintf-js versions. Only reachable via js-yaml's CLI bin (`bin/js-yaml.js` → argparse → sprintf-js), which the app never imports — gray-matter uses `js-yaml/lib` (verified: zero `argparse` references in `lib/`). Dead code at runtime; front-matter is parsed only from repo-local trusted MDX. Re-check when replacing gray-matter. |
+| `webpack-dev-middleware` (GHSA-g84c-rxfj-3j2c) | HIGH | No backport for the 6.x line, and the latest `@storybook/builder-webpack5` (10.6.x) still pins `^6.1.2`. Dev-only: Storybook dev server on localhost; exploitation requires access to the developer's own machine. Never shipped to users. Re-check when Storybook ships a builder on ≥7.4.5. |
+
+(`elliptic` GHSA-848j-6mx2-7j84 remains accepted low-severity as documented below;
+it is under the moderate gate threshold.)
+
+### New gate mechanism
+
+Raw `npm audit --audit-level=moderate` would now be red forever on the three
+unfixable advisories above — a permanently-red gate trains everyone to ignore it.
+CI therefore runs **`npm run audit:ci`** (`scripts/audit-gate.mjs`): an allowlist
+gate that **fails on any new moderate+ advisory** while acknowledging the
+documented ones (and warns when an allowlisted advisory stops reproducing, i.e.
+fixed upstream → remove it). Negative-tested: removing an entry makes the gate
+exit 1; all-acknowledged exits 0.
+
+Verification (2026-10-06): `audit:ci` PASS · `npx tsc --noEmit` clean ·
+`npm run lint` 0 warnings · `npm test` 32/32 · `npm run build` succeeds.
+
+---
+
 **Date:** 2026-09-10
 **Tooling:** `npm audit` (npm 10.9.8, Node 22.22.3) against the committed `package-lock.json`
 
