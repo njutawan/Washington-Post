@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "audit:ci": "node scripts/audit-gate.mjs",
+    "axe:local": "node scripts/axe-local.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",

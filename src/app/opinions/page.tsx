@@ -247,7 +247,7 @@ export default function OpinionsPage() {
           </div>
 
           {/* Sidebar */}
-          <aside className="md:col-span-1 space-y-8">
+          <aside aria-label="More opinions" className="md:col-span-1 space-y-8">
             <section className="bg-wp-black text-white p-5">
               <p className="kicker text-wp-red mb-2">Opinions newsletter</p>
               <h3 className="headline text-xl mb-2 leading-tight">

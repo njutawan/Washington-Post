@@ -75,7 +75,7 @@ export default function AccountPage() {
       <main id="main-content" className="wp-container py-6 md:py-10">
         <Breadcrumbs items={[{ label: 'Account', href: '/account' }]} />
         <div className="grid md:grid-cols-3 gap-8">
-          <aside className="md:col-span-1">
+          <aside aria-label="Profile" className="md:col-span-1">
             <div className="border-2 border-wp-black p-6 bg-white">
               <div className="flex items-center gap-4 mb-4">
                 {session.user.image ? (

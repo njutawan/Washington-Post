@@ -127,7 +127,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
         {/* 12-column layout: TOC | article | sidebar */}
         <div className="grid grid-cols-12 gap-6 lg:gap-8 mt-4">
-          <aside className="hidden lg:block lg:col-span-2 order-1">
+          <aside aria-label="On this page" className="hidden lg:block lg:col-span-2 order-1">
             <div id="toc-slot" className="relative">
               <TOCWithRef />
             </div>
@@ -345,7 +345,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           </article>
 
           {/* Right rail: sticky Most Read at top + Sidebar */}
-          <aside className="col-span-12 lg:col-span-3 order-3">
+          <aside aria-label="Related stories and most read" className="col-span-12 lg:col-span-3 order-3">
             <div className="lg:sticky lg:top-20 space-y-8">
               <MostRead />
               <Sidebar />

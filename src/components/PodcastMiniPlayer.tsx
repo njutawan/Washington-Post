@@ -48,20 +48,34 @@ export default function PodcastMiniPlayer() {
     seek(x * duration);
   };
 
+  // Keyboard seeking (the bar is a slider, so arrows/Home/End must work)
+  const onSeekKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!duration) return;
+    const step = e.shiftKey ? 30 : 5;
+    if (e.key === 'ArrowRight') { seek(Math.min(duration, currentTime + step)); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { seek(Math.max(0, currentTime - step)); e.preventDefault(); }
+    else if (e.key === 'Home') { seek(0); e.preventDefault(); }
+    else if (e.key === 'End') { seek(duration); e.preventDefault(); }
+  };
+
   return (
     <div
       className="fixed bottom-0 left-0 right-0 z-50 bg-wp-black text-white shadow-[0_-4px_16px_rgba(0,0,0,0.25)]"
       role="region"
       aria-label="Podcast player"
     >
-      {/* Progress bar */}
+      {/* Seek bar: a slider (interactive), not a progressbar (read-only) */}
       <div
         className="h-1 bg-white/15 cursor-pointer"
         onClick={onSeek}
-        role="progressbar"
+        onKeyDown={onSeekKey}
+        role="slider"
+        tabIndex={0}
+        aria-label="Seek episode"
         aria-valuenow={Math.round(pct)}
         aria-valuemin={0}
         aria-valuemax={100}
+        aria-valuetext={`${formatTime(currentTime)} of ${episode.durationLabel}`}
       >
         <div className="h-full bg-wp-red" style={{ width: `${pct}%`, transition: 'width 150ms linear' }} />
       </div>

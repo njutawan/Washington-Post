@@ -13,7 +13,7 @@ export default async function LiveBlogDesk() {
       </div>
 
       <div className="grid md:grid-cols-[300px_minmax(0,1fr)] gap-5">
-        <aside className="bg-white border border-wp-border">
+        <aside aria-label="Active live blogs" className="bg-white border border-wp-border">
           <div className="p-3 border-b border-wp-border text-[10px] uppercase tracking-widest font-bold text-wp-gray">Active live blogs</div>
           <ul>
             {[

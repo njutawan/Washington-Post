@@ -85,7 +85,7 @@ export default async function VideoPage({ params }: { params: Promise<Params> })
             </div>
           </div>
 
-          <aside className="lg:col-span-4 lg:border-l lg:border-wp-border lg:pl-6">
+          <aside aria-label="More video" className="lg:col-span-4 lg:border-l lg:border-wp-border lg:pl-6">
             <h2 className="kicker text-wp-black text-sm uppercase tracking-[0.15em] mb-3 border-b border-wp-border pb-2">More Video</h2>
             <ul className="space-y-4 mb-8">
               {otherVideos.map((v) => (

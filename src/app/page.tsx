@@ -75,7 +75,7 @@ export default function Home() {
           </div>
 
           {/* Right rail: top stories list + live link */}
-          <aside className="lg:col-span-3 lg:border-l lg:border-wp-border lg:pl-6">
+          <aside aria-label="Top stories" className="lg:col-span-3 lg:border-l lg:border-wp-border lg:pl-6">
             <h2 className="kicker text-wp-black text-sm uppercase tracking-[0.15em] mb-3 border-b border-wp-border pb-2">
               Top Stories
             </h2>

@@ -97,7 +97,7 @@ export default async function EditorialLayout({ children }: { children: React.Re
 
       <div className="flex-1 wp-container py-6 grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-6">
         {/* Sidebar nav */}
-        <aside className="md:sticky md:top-2 md:self-start">
+        <aside aria-label="Editorial sidebar" className="md:sticky md:top-2 md:self-start">
           <nav aria-label="Editorial navigation">
             {nav.map((section) => (
               <div key={section.section} className="mb-5">

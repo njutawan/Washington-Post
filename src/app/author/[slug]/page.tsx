@@ -169,7 +169,7 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
             )}
           </div>
 
-          <aside className="md:col-span-1 space-y-8">
+          <aside aria-label="More from this author" className="md:col-span-1 space-y-8">
             {author.isColumnist && (
               <section className="bg-white border-2 border-wp-black p-5">
                 <p className="kicker text-wp-red mb-2">About this columnist</p>

@@ -49,7 +49,7 @@ function SavedList() {
 
 export default function Sidebar() {
   return (
-    <aside className="space-y-8">
+    <aside aria-label="Explore more" className="space-y-8">
       <PodcastPlayer />
 
       <div className="border border-wp-border bg-white">
