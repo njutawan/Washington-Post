@@ -7,6 +7,7 @@ const ROUTES = [
   { path: '/opinions', name: 'opinions', selector: 'h1' },
   { path: '/games', name: 'games', selector: 'h1' },
   { path: '/newsletters', name: 'newsletters', selector: 'h1' },
+  { path: '/about', name: 'about', selector: 'h1' },
   { path: '/live/shutdown-countdown', name: 'live blog', selector: 'h1' },
   { path: '/search?q=shutdown', name: 'search', selector: 'main' },
 ];
