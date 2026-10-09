@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import NewsletterSignup from './NewsletterSignup';
 
 const footerSections = [
@@ -19,7 +20,15 @@ const footerSections = [
   },
 ];
 
-const aboutLinks = ['About Us', 'Masthead', 'Careers', 'Contact Us', 'Advertise', 'Ethics Policy', 'Corrections'];
+const aboutLinks = [
+  { label: 'About Us', href: '/about' },
+  { label: 'Masthead', href: '#' },
+  { label: 'Careers', href: '#' },
+  { label: 'Contact Us', href: '#' },
+  { label: 'Advertise', href: '#' },
+  { label: 'Ethics Policy', href: '#' },
+  { label: 'Corrections', href: '#' },
+];
 
 export default function Footer() {
   return (
@@ -68,10 +77,16 @@ export default function Footer() {
             <h3 className="kicker text-white mb-3 text-[13px]">About</h3>
             <ul className="space-y-2">
               {aboutLinks.map((item) => (
-                <li key={item}>
-                  <a href="#" className="text-sm font-sans text-gray-300 hover:text-white hover:underline">
-                    {item}
-                  </a>
+                <li key={item.label}>
+                  {item.href === '#' ? (
+                    <a href={item.href} className="text-sm font-sans text-gray-300 hover:text-white hover:underline">
+                      {item.label}
+                    </a>
+                  ) : (
+                    <Link href={item.href} className="text-sm font-sans text-gray-300 hover:text-white hover:underline">
+                      {item.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>

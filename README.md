@@ -2,9 +2,9 @@
 
 # 📰 The Washington Post — Clone
 
-### *“Democracy Dies in Darkness”*
+### *A newsroom experience, built for the web.*
 
-**Clone pengalaman membaca koran digital kelas dunia — dibangun dengan stack modern yang production-ready.**
+**Sebuah demo produk berita digital yang menggabungkan ritme koran klasik dengan pengalaman membaca dan workflow redaksi modern.**
 
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev/)
@@ -14,21 +14,44 @@
 [![Release](https://img.shields.io/github/v/release/njutawan/Washington-Post?color=b40001)](https://github.com/njutawan/Washington-Post/releases)
 [![License: Demo](https://img.shields.io/badge/license-demo%20%2F%20educational-lightgrey)](#-disclaimer)
 
-[🚀 Mulai Cepat](#-mulai-cepat) •
-[✨ Fitur Unggulan](#-fitur-unggulan) •
-[🖥️ Jelajahi Halaman](#️-jelajahi-halaman) •
-[📦 Rilis](https://github.com/njutawan/Washington-Post/releases) •
+[🚀 Mulai Cepat](#-mulai-cepat) ·
+[✨ Fitur](#-fitur-unggulan) ·
+[🧭 Jelajahi Produk](#-mulai-dari-mana) ·
+[🖥️ Halaman](#️-jelajahi-halaman) ·
 [🗺️ Roadmap](#️-roadmap)
 
 </div>
 
 ---
 
-## 📖 Tentang
+## ✦ Bukan sekadar halaman berita
 
-Replika tampilan, nuansa, dan pengalaman membaca **The Washington Post** — dari masthead klasik berkhas serif, ticker berita breaking, sampai paywall berlangganan — namun dengan **fitur setara produk berita modern**: CMS redaksi, akun pembaca, mode offline (PWA), notifikasi push, live blog, pencarian secepat kilat, hingga mini-games.
+Bayangkan masthead koran yang familier, lalu tambahkan semua yang dibutuhkan produk berita masa kini: pencarian instan, akun pembaca, paywall terukur, live blog, audio, video, PWA offline, hingga ruang kerja untuk redaksi. Itulah yang dieksplorasi proyek ini.
 
-> 🇬🇧 *A Washington Post-style digital newspaper experience — classic newsprint look on the outside, modern production-grade stack on the inside: editorial CMS, reader accounts, PWA offline mode, push notifications, live blogs, instant search, and games.*
+> **Dibuat untuk terasa seperti sebuah edisi.** Beranda membantu pembaca menemukan hal penting, halaman artikel memberi ruang untuk fokus, dan Editorial CMS memperlihatkan pekerjaan yang terjadi sebelum sebuah cerita terbit.
+
+| Untuk pembaca | Untuk newsroom | Di balik layar |
+| --- | --- | --- |
+| Jelajahi section, simpan artikel, dengarkan cerita, main game, dan lanjutkan membaca di perangkat lain. | Kelola ide → assignment → draft → edit → publish, live updates, media, komentar, alert, dan analytics. | Next.js App Router, TypeScript strict, MDX, PWA, test suite, monitoring, dan security headers. |
+
+<details>
+<summary><b>🇬🇧 English summary</b></summary>
+
+A Washington Post-inspired digital newsroom demo. It blends a classic newspaper reading surface with production-minded features: editorial workflows, reader accounts, metered access, live coverage, media, search, offline support and a strong accessibility baseline.
+</details>
+
+---
+
+## 🧭 Mulai dari mana?
+
+| Jika Anda ingin… | Kunjungi | Yang akan Anda temukan |
+| --- | --- | --- |
+| Merasakan edisi digital | [`/`](#️-jelajahi-halaman) | Lead story, sections, breaking ticker, opini, video dan mini crossword. |
+| Melihat alur kerja newsroom | [`/editorial`](#️-jelajahi-halaman) | Board story, assignments, live publisher, moderasi komentar dan analytics. |
+| Mengikuti cerita yang berkembang | [`/live/shutdown-countdown`](#️-jelajahi-halaman) | Live blog berurutan-terbalik dengan update real-time. |
+| Memahami proyek ini | [`/about`](#️-jelajahi-halaman) | Prinsip desain, pengalaman yang tersedia dan catatan independensi proyek. |
+
+> 💡 **Tidak perlu API key untuk mencoba.** Konten MDX lokal yang dikurasi membuat pengalaman tetap hidup sejak `npm run dev` pertama kali dijalankan.
 
 ---
 
@@ -156,6 +179,7 @@ Jalankan dev server, lalu buka:
 | 📬 Newsletters | `/newsletters` | 👤 Akun | `/account` |
 | 🔖 Tersimpan | `/bookmarks` | 💳 Subscribe | `/subscribe` |
 | 📊 Analytics | `/analytics` | ✈️ Mode offline | `/offline` |
+| ✦ Tentang proyek | `/about` | 🧭 Semua fitur | [lihat di bawah](#-fitur-lengkap) |
 
 > 💡 **Tanpa API key pun situs tetap hidup** — otomatis fallback ke 45+ artikel MDX kurasi lokal (`content/articles/`) + adapter NewsAPI & Sanity yang opsional.
 
