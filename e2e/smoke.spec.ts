@@ -7,6 +7,7 @@ const ROUTES = [
   { path: '/opinions', name: 'opinions', selector: 'h1' },
   { path: '/games', name: 'games', selector: 'h1' },
   { path: '/newsletters', name: 'newsletters', selector: 'h1' },
+  { path: '/about', name: 'about', selector: 'h1' },
   { path: '/live/shutdown-countdown', name: 'live blog', selector: 'h1' },
   { path: '/search?q=shutdown', name: 'search', selector: 'main' },
 ];
@@ -28,9 +29,9 @@ test('homepage shows the masthead title', async ({ page }) => {
 
 test('article page renders and shows byline', async ({ page }) => {
   await page.goto('/article/house-passes-short-term-spending-bill');
-  await expect(page.locator('main').first()).toBeVisible();
-  // Paywall subscribe CTA eventually appears
-  await expect(page.getByText(/already used your free article/i).first().or(page.getByText(/read more/i).first())).toBeVisible({ timeout: 10000 });
+  const article = page.locator('article').first();
+  await expect(article).toBeVisible();
+  await expect(article.getByText(/Marianna Sotomayor/i).first()).toBeVisible();
 });
 
 test('games page renders mini crossword cells', async ({ page }) => {
