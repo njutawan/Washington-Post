@@ -19,7 +19,7 @@ export default async function StaffPage() {
     <div>
       <div className="mb-4 pb-3 border-b-2 border-wp-black flex items-baseline justify-between">
         <h1 className="masthead-title text-2xl md:text-3xl leading-none">Staff &amp; beats</h1>
-        <button className="bg-wp-red text-white px-4 py-2 font-bold uppercase text-xs tracking-wider hover:bg-wp-black">+ Invite staff</button>
+        <button disabled title="Operator CLI only" className="bg-wp-red text-white px-4 py-2 font-bold uppercase text-xs tracking-wider hover:bg-wp-black">+ Invite staff</button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -30,7 +30,7 @@ export default async function StaffPage() {
             <div className="font-bold text-sm font-serif">{p.name}</div>
             <div className="text-[11px] text-wp-gray uppercase tracking-wider mt-0.5 font-sans">{p.title}</div>
             <div className="mt-2 flex items-center justify-center gap-2">
-              <select className="text-[10px] border border-wp-border bg-white px-1">
+              <select disabled title="Operator CLI only" className="text-[10px] border border-wp-border bg-white px-1">
                 <option>Author</option>
                 <option>Editor</option>
                 <option selected={p.title?.toLowerCase().includes('editor') || p.title?.toLowerCase().includes('managing')}>Admin</option>
@@ -42,7 +42,7 @@ export default async function StaffPage() {
       </div>
 
       <p className="text-xs text-wp-gray font-sans mt-6 leading-relaxed">
-        Roles and permissions are provisioned via Clerk Organizations / public metadata in production.
+        Roles are provisioned by an operator using the staff:grant command and audited in the database. This roster is a display-only demo.
       </p>
     </div>
   );

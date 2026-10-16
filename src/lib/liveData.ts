@@ -299,7 +299,7 @@ export function subscribe(slug: string, fn: (u: LiveUpdate) => void): () => void
   const subs = subscribers.get(slug)!;
   const isFirst = subs.size === 0;
   subs.add(fn);
-  if (isFirst) startSimulation(slug);
+  if (isFirst && process.env.NODE_ENV !== 'production') startSimulation(slug);
   return () => {
     subs.delete(fn);
     if (subs.size === 0) stopSimulation(slug);

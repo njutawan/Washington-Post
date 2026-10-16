@@ -1,9 +1,10 @@
+import { withApi } from '@/lib/http-security';
 import { NextResponse } from 'next/server';
 import { EPISODES } from '@/lib/podcast';
 
 // No edge runtime: Next.js ignores force-static on edge routes; keep this
 // feed prerendered at build time on the default Node.js runtime.
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 export const revalidate = 600;
 
 function escapeXml(s: string) {
@@ -16,7 +17,7 @@ function escapeXml(s: string) {
  * RSS 2.0 feed for the Post Reports podcast. Feed validators & podcast apps
  * (Apple Podcasts, Pocket Casts, Overcast) can subscribe to this URL.
  */
-export function GET() {
+function feed() {
   const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://wapo.example.com';
   const items = EPISODES.map((ep) => `
     <item>
@@ -58,3 +59,5 @@ export function GET() {
     },
   });
 }
+
+export const GET=withApi({name:'rss-read',max:120,private:false},feed);

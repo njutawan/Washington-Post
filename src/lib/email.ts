@@ -1,3 +1,4 @@
+import { securityLog } from './security-log';
 /**
  * Minimal email delivery wrapper.
  *
@@ -31,6 +32,7 @@ export async function sendEmail(msg: EmailMessage): Promise<{ ok: boolean; provi
     try {
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
+        signal: AbortSignal.timeout(5000),
         headers: {
           'Authorization': `Bearer ${key}`,
           'Content-Type': 'application/json',
@@ -45,21 +47,22 @@ export async function sendEmail(msg: EmailMessage): Promise<{ ok: boolean; provi
         }),
       });
       if (!res.ok) {
-        const err = await res.text();
-        console.warn('[email] Resend error:', err);
-        return { ok: false, provider: 'resend', error: err };
+        securityLog('email_failed');
+        return { ok: false, provider: 'resend', error: 'Email delivery failed' };
       }
       const data = await res.json() as { id?: string };
       return { ok: true, provider: 'resend', id: data.id };
-    } catch (e) {
-      console.warn('[email] Resend fetch failed, falling back to stub:', e);
+    } catch {
+      securityLog('email_failed');
+      return { ok: false, provider: 'resend', error: 'Email delivery unavailable' };
     }
   }
 
-  // Stub: log to console and append to outbox
+  if (process.env.NODE_ENV === 'production') return { ok:false,provider:'resend',error:'Email delivery not configured' };
+  // Bounded local/test stub only; no PII logging.
   const entry: OutboxEntry = { ...payload, sentAt: new Date().toISOString() };
+  if(outbox.length>=100)outbox.shift();
   outbox.push(entry);
-  console.log(`[email:stub] -> ${payload.to} | ${payload.subject} (outbox size=${outbox.length})`);
   return { ok: true, provider: 'stub', id: `stub-${outbox.length}` };
 }
 

@@ -14,8 +14,7 @@ const DESKS = [
 
 // Wrap action to match Server Action signature (void return)
 async function submit(fd: FormData) {
-  const res = await create(fd);
-  if (res?.error) redirect(`/editorial/stories/new?error=${encodeURIComponent(res.error)}`);
+  await create(fd);
 }
 
 export default async function NewStory() {

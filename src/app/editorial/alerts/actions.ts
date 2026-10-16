@@ -1,32 +1,35 @@
 'use server';
-
 import { revalidatePath } from 'next/cache';
-import { createAlert, getAlerts, upsertAlert, deleteAlert } from '@/lib/editorialStore';
-import { requireActor } from '@/lib/editorialAuth.server';
-
+import {
+  createAlert,
+  toggleAlert as toggle,
+  deleteAlert,
+} from '@/lib/editorialStore';
+import { actionActor } from '@/lib/action-security';
+import { z } from 'zod';
 export async function postAlert(fd: FormData): Promise<void> {
-  const u = await requireActor('editor');
-  const headline = String(fd.get('headline') || '').trim();
-  if (!headline) return;
-  createAlert({ kind: String(fd.get('kind') || 'breaking') as any, headline, body: String(fd.get('body') || '') || undefined }, u);
+  const actor = await actionActor(fd, 'editor');
+  await createAlert(
+    {
+      kind: z.enum(['breaking', 'correction', 'note']).parse(fd.get('kind')),
+      headline: String(fd.get('headline') || ''),
+      body: String(fd.get('body') || ''),
+    },
+    actor,
+  );
   revalidatePath('/editorial/alerts');
   revalidatePath('/');
 }
-
 export async function toggleAlert(fd: FormData): Promise<void> {
-  await requireActor('editor');
-  const id = String(fd.get('id') || '');
-  const live = String(fd.get('live')) === 'true';
-  const list = getAlerts();
-  const a = list.find((x) => x.id === id);
-  if (a) { a.live = live; upsertAlert(a); }
+  const actor = await actionActor(fd, 'editor');
+  const live = z.enum(['true', 'false']).parse(fd.get('live')) === 'true';
+  await toggle(String(fd.get('id') || ''), live, actor);
   revalidatePath('/editorial/alerts');
   revalidatePath('/');
 }
-
 export async function removeAlert(fd: FormData): Promise<void> {
-  await requireActor('editor');
-  deleteAlert(String(fd.get('id') || ''));
+  const actor = await actionActor(fd, 'editor');
+  await deleteAlert(String(fd.get('id') || ''), actor);
   revalidatePath('/editorial/alerts');
   revalidatePath('/');
 }

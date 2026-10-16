@@ -1,8 +1,8 @@
 /* eslint-disable */
 /* Service Worker v4 — offline caching + push notifications + background sync */
-const CACHE_VERSION = 'wapo-v4';
-const STATIC_CACHE = 'wapo-static-v4';
-const PAGES_CACHE = 'wapo-pages-v4';
+const CACHE_VERSION = 'wapo-v5';
+const STATIC_CACHE = 'wapo-static-v5';
+const PAGES_CACHE = 'wapo-pages-v5';
 const PRECACHE_URLS = ['/', '/offline', '/politics', '/opinions', '/newsletters'];
 const OFFLINE_QUEUE = 'wapo-offline-queue';
 const BG_SYNC_TAG = 'wapo-bg-sync';
@@ -19,7 +19,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
-        keys.filter((k) => k !== STATIC_CACHE && k !== PAGES_CACHE && k !== OFFLINE_QUEUE)
+        keys.filter((k) => k !== STATIC_CACHE && k !== PAGES_CACHE)
           .map((k) => caches.delete(k)),
       ),
     ).then(() => self.clients.claim()),
@@ -99,34 +99,7 @@ async function queueOfflineRequest(request) {
   return key;
 }
 
-async function replayOfflineQueue() {
-  const queue = await caches.open(OFFLINE_QUEUE);
-  const keys = await queue.keys();
-  const results = [];
-  for (const req of keys) {
-    const res = await queue.match(req);
-    if (!res) continue;
-    let entry;
-    try { entry = await res.json(); } catch { continue; }
-    try {
-      await fetch(entry.url, {
-        method: entry.method,
-        headers: entry.headers,
-        body: ['GET', 'HEAD'].includes(entry.method) ? undefined : entry.body,
-        credentials: 'include',
-      });
-      await queue.delete(req);
-      results.push({ key: req.url, ok: true });
-    } catch (e) {
-      // Still offline — leave in queue for next sync event.
-      results.push({ key: req.url, ok: false });
-    }
-  }
-  // Tell any open client tabs the queue drained (or was retried).
-  const clients = await self.clients.matchAll({ includeUncontrolled: true });
-  clients.forEach((c) => c.postMessage?.({ type: 'bg-sync-complete', results }));
-  return results;
-}
+async function replayOfflineQueue() { await caches.delete(OFFLINE_QUEUE); return []; }
 
 /**
  * Privacy guard: never cache responses the server marked private.
@@ -174,28 +147,8 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/api/live/updates')) return;
   if (url.pathname.startsWith('/api/auth/')) return;
 
-  // Mutating API requests (POST/PUT/DELETE): attempt network; on failure, queue
-  // for background sync replay when the client comes back online.
-  if (
-    url.pathname.startsWith('/api/') &&
-    ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)
-  ) {
-    event.respondWith(
-      fetch(request.clone())
-        .catch(async () => {
-          await queueOfflineRequest(request);
-          // Try to register a sync for replay; if not supported, replay on next online event.
-          try {
-            await self.registration.sync.register(BG_SYNC_TAG);
-          } catch {}
-          return new Response(JSON.stringify({ queued: true, offline: true }), {
-            status: 202,
-            headers: { 'content-type': 'application/json' },
-          });
-        }),
-    );
-    return;
-  }
+  // Mutations are never persisted/replayed: account changes would change their authority.
+  if (url.pathname.startsWith('/api/') && request.method !== 'GET') return;
 
   if (request.method !== 'GET') return;
 
@@ -216,22 +169,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // GET API (non-mutating, non-SSE): network-first with cache fallback.
-  // Personalized responses (signed-in / no-store) are never cached.
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(request)
-        .then((res) => {
-          if (isCacheable(res)) {
-            const resClone = res.clone();
-            caches.open(STATIC_CACHE).then((cache) => cache.put(request, resClone));
-          }
-          return res;
-        })
-        .catch(() => caches.match(request)),
-    );
-    return;
-  }
+  // API responses are always network-only, never cache private account data.
+  if (url.pathname.startsWith('/api/')) return;
 
   // Static assets: stale-while-revalidate
   if (['style', 'script', 'font', 'image'].includes(request.destination)) {

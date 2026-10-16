@@ -36,10 +36,10 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
 
       - name: Dependency security audit
-        run: npm audit --audit-level=moderate
+        run: npm run audit:ci
 
       - name: Type check
         run: npx tsc --noEmit
@@ -51,6 +51,9 @@ jobs:
         run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: '1'
+
+      - name: Security regression and isolated restore drill
+        run: npm run test:security -- --http
 
   publish:
     name: Publish GitHub Release 🚀

@@ -16,7 +16,7 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
   await getEditorialUser('editor');
   const sp = await searchParams;
   const tab = (sp.tab || 'pending') as 'pending'|'flagged'|'approved'|'rejected';
-  const comments = tab === 'flagged' ? getComments({ flagged: true }) : getComments({ status: tab });
+  const comments = tab === 'flagged' ? (await getComments({ flagged: true })) : (await getComments({ status: tab }));
 
   return (
     <div>

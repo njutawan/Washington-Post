@@ -15,11 +15,11 @@ const TABS = [
 ] as const;
 
 export default async function StoriesPage({ searchParams }: { searchParams: Promise<{ status?: string; q?: string }> }) {
-  await getEditorialUser();
+  const actor = await getEditorialUser();
   const sp = await searchParams;
   const status = sp.status || 'all';
   const q = (sp.q || '').toLowerCase().trim();
-  let stories = getStories();
+  let stories = (await getStories()).filter(s => actor.role !== 'author' || s.authorId === actor.id);
   if (status !== 'all') stories = stories.filter((s) => s.status === status);
   if (q) stories = stories.filter((s) => s.title.toLowerCase().includes(q) || s.slug.includes(q) || (s.authorName||'').toLowerCase().includes(q));
   stories.sort((a, b) => (b.priority === 'breaking' ? 1 : 0) - (a.priority === 'breaking' ? 1 : 0) || new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());

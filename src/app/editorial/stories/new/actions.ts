@@ -1,18 +1,20 @@
 'use server';
-
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createStory } from '@/lib/editorialStore';
-import { requireActor } from '@/lib/editorialAuth.server';
-
+import { actionActor } from '@/lib/action-security';
+import { prioritySchema } from '@/lib/security-input';
 export async function create(fd: FormData) {
-  const actor = await requireActor();
-  const title = String(fd.get('title') || '').trim();
-  if (!title) return { error: 'Headline required' };
-  const category = String(fd.get('category') || 'Politics');
-  const categorySlug = String(fd.get('categorySlug') || category.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
-  const s = createStory(
-    { title, category, categorySlug, kicker: String(fd.get('kicker') || '') || undefined, dek: String(fd.get('dek') || '') || undefined, priority: String(fd.get('priority') || 'routine') as any, status: 'drafting' },
+  const actor = await actionActor(fd);
+  const s = await createStory(
+    {
+      title: String(fd.get('title') || ''),
+      category: String(fd.get('category') || ''),
+      categorySlug: String(fd.get('categorySlug') || ''),
+      dek: String(fd.get('dek') || ''),
+      kicker: String(fd.get('kicker') || ''),
+      priority: prioritySchema.parse(fd.get('priority') || 'routine'),
+    },
     actor,
   );
   revalidatePath('/editorial', 'layout');

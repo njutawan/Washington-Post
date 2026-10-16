@@ -1,3 +1,4 @@
+import { securityLog } from './security-log';
 /**
  * CMS adapter layer (Task 23 — Sanity integration).
  *
@@ -67,7 +68,7 @@ export async function fetchArticles(limit = 50): Promise<Article[]> {
     );
     return docs.map(normalizeArticle);
   } catch (e) {
-    console.warn('[cms] Sanity fetch failed, falling back to local data:', e);
+    securityLog('cms_failed');
     return getLocalArticles().slice(0, limit);
   }
 }
@@ -82,7 +83,7 @@ export async function fetchArticleBySlug(slug: string): Promise<Article | null> 
     );
     return doc ? normalizeArticle(doc) : null;
   } catch (e) {
-    console.warn('[cms] Sanity fetch by slug failed, falling back to local data:', e);
+    securityLog('cms_failed');
     return getLocalArticles().find((a) => a.slug === slug) || null;
   }
 }

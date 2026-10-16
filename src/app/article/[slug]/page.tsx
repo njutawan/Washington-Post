@@ -1,3 +1,5 @@
+import { safeJsonLd } from '@/lib/security-json';
+import { getPublishedArticle } from '@/lib/editorialStore';
 import { notFound } from 'next/navigation';
 import Masthead from '@/components/Masthead';
 import Footer from '@/components/Footer';
@@ -29,6 +31,8 @@ import { inferTopics } from '@/lib/topics';
 export const dynamicParams = true;
 
 async function resolveArticle(slug: string) {
+  const published = await getPublishedArticle(slug);
+  if (published) return { article: published, Content: null, isMdx: false as const };
   // 1. Local MDX content
   const mdx = await getMdxArticle(slug).catch(() => null);
   if (mdx) return { article: mdx as any, Content: mdx.Content, isMdx: true as const };
@@ -101,7 +105,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
+          __html: safeJsonLd(
             breadcrumbJsonLd([
               { name: 'Home', item: '/' },
               ...(article.category && article.categorySlug
@@ -114,7 +118,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd(article)) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(articleJsonLd(article)) }}
       />
 
       <main id="main-content" className="wp-container py-6">

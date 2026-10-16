@@ -1,15 +1,16 @@
+import { readDocument,mutateDocument } from './storage';
 /**
- * Privacy-first analytics store (in-memory, Plausible-compatible).
+ * Privacy-first analytics store (durable and tenant-scoped, Plausible-compatible).
  *
  * In production this module is a thin wrapper around a Plausible script tag
  * (configured via NEXT_PUBLIC_PLAUSIBLE_DOMAIN). For the demo / self-hosted
- * mode it collects pageviews and custom events in-process and exposes a
+ * mode it collects pageviews and custom events in PostgreSQL and exposes a
  * dashboard endpoint (/api/analytics/stats) so the editorial metrics page
  * works without external services.
  *
  * - No cookies, no IPs, no PII
  * - Honors DNT at the edge (route.ts)
- * - Stores at most MAX_EVENTS events in memory, probabilistically trimming
+ * - Stores at most MAX_EVENTS events in memory, trimming deterministically
  * - "Unique" sessions are approximated via a 24-hour client-generated sid
  */
 
@@ -25,19 +26,12 @@ export type AnalyticsEvent = {
   sessionId?: string;
 };
 
-const events: AnalyticsEvent[] = [];
-const MAX_EVENTS = 10_000;
-const CLEANUP_PROBABILITY = 0.05;
-
-export function recordEvent(event: Omit<AnalyticsEvent, 'ts'> & { ts?: number }) {
-  const full: AnalyticsEvent = { ts: event.ts || Date.now(), ...event };
-  events.push(full);
-
-  // Lazy cleanup: cap in-memory store
-  if (events.length > MAX_EVENTS && Math.random() < CLEANUP_PROBABILITY) {
-    events.splice(0, events.length - MAX_EVENTS);
-  }
-  return full;
+const MAX_EVENTS=10000;
+export async function recordEvent(event: Omit<AnalyticsEvent,'ts'> & {ts?:number}) {
+  const full:AnalyticsEvent={...event,ts:event.ts || Date.now()};
+  await mutateDocument<AnalyticsEvent[],void>('analytics',[],events=>{
+    events.push(full);if(events.length>MAX_EVENTS)events.splice(0,events.length-MAX_EVENTS);
+  });return full;
 }
 
 export type StatsSummary = {
@@ -64,7 +58,8 @@ export type StatsSummary = {
   };
 };
 
-export function getStats(sinceMinutes = 60 * 24): StatsSummary {
+export async function getStats(sinceMinutes = 60 * 24): Promise<StatsSummary> {
+  const events=await readDocument<AnalyticsEvent[]>('analytics',[]);
   const since = Date.now() - sinceMinutes * 60 * 1000;
   const recent = events.filter((e) => e.ts >= since);
 
@@ -78,7 +73,7 @@ export function getStats(sinceMinutes = 60 * 24): StatsSummary {
   }>();
   const referrers = new Map<string, number>();
   const allSessions = new Set<string>();
-  const eventsByName: Record<string, number> = {};
+  const eventsByName: Record<string, number> = Object.create(null);
 
   let paywallSeen = 0;
   let paywallConvert = 0;
@@ -207,6 +202,7 @@ function normalizeReferrer(referrer: string): string {
 }
 
 /** Test-only helper to clear in-memory state between cases. */
-export function _resetForTests() {
-  events.length = 0;
+export async function _resetForTests() {
+  if(process.env.NODE_ENV!=='test')throw new Error('Tests only');
+  await mutateDocument<AnalyticsEvent[],void>('analytics',[],events=>{events.length=0;});
 }

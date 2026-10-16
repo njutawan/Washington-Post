@@ -49,8 +49,8 @@ export default async function EditorialSettings() {
           <div className="grid grid-cols-[200px_minmax(0,1fr)] gap-3 text-sm font-mono">
             <div className="pt-1 text-[11px] uppercase tracking-widest text-wp-gray font-bold font-sans">Resend API</div>
             <code className="text-xs text-wp-gray p-2 bg-wp-cream border border-wp-border">RESEND_API_KEY={process.env.RESEND_API_KEY ? '•••••••• (set)' : '(not set — using stub outbox)'}</code>
-            <div className="pt-1 text-[11px] uppercase tracking-widest text-wp-gray font-bold font-sans">Clerk</div>
-            <code className="text-xs text-wp-gray p-2 bg-wp-cream border border-wp-border">NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? '•••••••• (set)' : '(not set)'}</code>
+            <div className="pt-1 text-[11px] uppercase tracking-widest text-wp-gray font-bold font-sans">Authentication</div>
+            <code className="text-xs text-wp-gray p-2 bg-wp-cream border border-wp-border">NextAuth · database roles · single newsroom</code>
             <div className="pt-1 text-[11px] uppercase tracking-widest text-wp-gray font-bold font-sans">Sanity CMS</div>
             <code className="text-xs text-wp-gray p-2 bg-wp-cream border border-wp-border">NEXT_PUBLIC_SANITY_PROJECT_ID={process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || '(not set — local MDX active)'}</code>
           </div>

@@ -1,26 +1,37 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { auth } from '@/auth';
 import { addComment, getComments } from '@/lib/db';
-import { csrfBlock } from '@/lib/csrf';
-
-export async function GET(_: Request, { params }: { params: Promise<{ articleId: string }> }) {
-  const { articleId } = await params;
-  const list = await getComments(articleId);
-  return NextResponse.json({ comments: list });
-}
-
-export async function POST(req: Request, { params }: { params: Promise<{ articleId: string }> }) {
-  const blocked = csrfBlock(req);
-  if (blocked) return blocked;
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Sign in to comment' }, { status: 401 });
-  }
-  const { articleId } = await params;
-  const { body } = await req.json();
-  if (!body || typeof body !== 'string' || body.trim().length < 2) {
-    return NextResponse.json({ error: 'Comment too short' }, { status: 400 });
-  }
-  const comment = await addComment({ articleId, userId: session.user.id, body });
-  return NextResponse.json({ comment });
-}
+import { withApi, readJson, HttpError } from '@/lib/http-security';
+import { idSchema } from '@/lib/security-input';
+import { consumeLimit } from '@/lib/rate-limit';
+type Context = { params: Promise<{ articleId: string }> };
+export const GET = withApi(
+  { name: 'comments-read' },
+  async (_: Request, { params }: Context) => {
+    const { articleId } = await params;
+    if (!idSchema.safeParse(articleId).success)
+      throw new HttpError(400, 'Invalid article');
+    return NextResponse.json({ comments: await getComments(articleId) });
+  },
+);
+export const POST = withApi(
+  { name: 'comments-write', max: 10 },
+  async (req: Request, { params }: Context) => {
+    const s = await auth();
+    if (!s?.user?.id) throw new HttpError(401, 'Sign in required');
+    if (!(await consumeLimit('comments-user:' + s.user.id, 10, 60000)).allowed)
+      throw new HttpError(429, 'Too many comments');
+    const { articleId } = await params;
+    if (!idSchema.safeParse(articleId).success)
+      throw new HttpError(400, 'Invalid article');
+    const { body } = await readJson(
+      req,
+      z.object({ body: z.string().trim().min(2).max(1000) }).strict(),
+      8192,
+    );
+    return NextResponse.json({
+      comment: await addComment({ articleId, userId: s.user.id, body }),
+    });
+  },
+);

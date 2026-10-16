@@ -1,23 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-// Mock web-push to avoid actual network calls
-vi.mock('web-push', () => {
-  return {
-    default: {
-      setVapidDetails: () => {},
-      sendNotification: vi.fn(async (sub: any, payload: string) => {
-        if (sub.endpoint.startsWith('https://expired.fcm.googleapis.com')) {
-          const err: any = new Error('gone');
-          err.statusCode = 410;
-          throw err;
-        }
-        return { statusCode: 201, payload };
-      }),
-      generateVAPIDKeys: () => ({ public: 'pub', private: 'priv' }),
-    },
-  };
-});
-
+// @vitest-environment node
+import { describe, it, expect, vi } from 'vitest';
+vi.mock('web-push', () => ({
+  default: {
+    setVapidDetails: vi.fn(),
+    generateVAPIDKeys: () => ({ publicKey: 'pub', privateKey: 'priv' }),
+    sendNotification: vi.fn(async (sub: { endpoint: string }) => {
+      if (sub.endpoint.endsWith('/expired'))
+        throw Object.assign(new Error('gone'), { statusCode: 410 });
+    }),
+  },
+}));
 import {
   addSubscription,
   removeSubscription,
@@ -25,75 +17,48 @@ import {
   getSubscriptionCount,
   isValidPushEndpoint,
 } from '@/lib/push';
-
-describe('push store', () => {
-  beforeEach(() => {
-    // No way to reset map from outside, but each test uses unique endpoints.
+const sub = (path: string) => ({
+  endpoint: 'https://fcm.googleapis.com/' + path,
+  keys: { p256dh: 'key', auth: 'auth-secret' },
+});
+describe('push boundary', () => {
+  it('persists subscriptions, prevents key replacement, and requires proof for removal', async () => {
+    const a = sub('proof');
+    expect(await addSubscription(a)).toBe(true);
+    expect(
+      await addSubscription({ ...a, keys: { ...a.keys, auth: 'attacker' } }),
+    ).toBe(false);
+    expect(await removeSubscription(a.endpoint, 'wrong')).toBe(false);
+    expect(await removeSubscription(a.endpoint, a.keys.auth)).toBe(true);
   });
-
-  const makeSub = (endpoint: string) => ({
-    endpoint,
-    keys: { p256dh: 'a', auth: 'b' },
+  it('sends and removes expired subscriptions without exposing endpoint URLs', async () => {
+    await addSubscription(sub('ok'));
+    await addSubscription(sub('expired'));
+    const before = await getSubscriptionCount();
+    const result = await sendPush({ title: 't', body: 'b', topic: 'breaking' });
+    expect(result.sent).toBe(1);
+    expect(result.failed).toBe(1);
+    expect(result).not.toHaveProperty('failures');
+    expect(await getSubscriptionCount()).toBe(before - 1);
   });
-
-  it('adds and lists subscriptions', () => {
-    const before = getSubscriptionCount();
-    addSubscription(makeSub(`https://fcm.googleapis.com/fcm/v1/subscribe-${Math.random()}`), {
-      topics: ['breaking'],
-    });
-    expect(getSubscriptionCount()).toBe(before + 1);
-  });
-
-  it('sends push messages to all topic subscribers', async () => {
-    const e1 = `https://fcm.googleapis.com/fcm/v1/subscribe-${Math.random()}`;
-    const e2 = `https://fcm.googleapis.com/fcm/v1/subscribe-${Math.random()}`;
-    addSubscription(makeSub(e1), { topics: ['breaking'] });
-    addSubscription(makeSub(e2), { topics: ['opinions'] });
-    const result = await sendPush({
-      title: 'BREAKING',
-      body: 'Big news',
-      topic: 'breaking',
-      url: '/article/x',
-    });
-    expect(result.sent).toBeGreaterThanOrEqual(1);
-    expect(result.failed).toBe(0);
-  });
-
-  it('removes expired (410) subscriptions automatically', async () => {
-    const badEp = 'https://expired.fcm.googleapis.com/fcm/v1/expired';
-    addSubscription(makeSub(badEp), { topics: ['breaking'] });
-    const before = getSubscriptionCount();
-    await sendPush({ title: 't', body: 'b', topic: 'breaking' });
-    // The 410 should have removed the bad endpoint.
-    expect(getSubscriptionCount()).toBe(before - 1);
-  });
-
-  it('removeSubscription deletes by endpoint', () => {
-    const ep = `https://fcm.googleapis.com/fcm/v1/subscribe-${Math.random()}`;
-    addSubscription(makeSub(ep));
-    expect(removeSubscription(ep)).toBe(true);
-  });
-
-  it('SSRF guard: only accepts https endpoints on known push services', () => {
-    // Allowed
-    expect(isValidPushEndpoint('https://fcm.googleapis.com/fcm/v1/x')).toBe(true);
-    expect(isValidPushEndpoint('https://push.services.mozilla.com/wpush/v1/x')).toBe(true);
-
-    // Rejected: internal / SSRF targets
-    expect(isValidPushEndpoint('http://169.254.169.254/latest/meta-data/')).toBe(false);
-    expect(isValidPushEndpoint('https://169.254.169.254/latest/meta-data/')).toBe(false);
-    expect(isValidPushEndpoint('http://127.0.0.1:3000/api/feed')).toBe(false);
-    expect(isValidPushEndpoint('https://127.0.0.1:3000/api/feed')).toBe(false);
-    expect(isValidPushEndpoint('http://localhost:3000/')).toBe(false);
-    expect(isValidPushEndpoint('https://internal.corp/')).toBe(false);
-    expect(isValidPushEndpoint('https://evil.example.com/fcm/v1/x')).toBe(false);
-    expect(isValidPushEndpoint('gopher://127.0.0.1/')).toBe(false);
-    expect(isValidPushEndpoint('not a url')).toBe(false);
-    expect(isValidPushEndpoint(undefined)).toBe(false);
-
-    // And addSubscription enforces it.
-    const before = getSubscriptionCount();
-    addSubscription(makeSub('https://internal.corp/secret'));
-    expect(getSubscriptionCount()).toBe(before);
+  it.each([
+    'https://127.0.0.1/a',
+    'http://169.254.169.254/a',
+    'https://fcm.googleapis.com.evil/a',
+    'https://evil.fcm.googleapis.com/a',
+    'https://fcm.googleapis.com:8443/a',
+    'https://user:pass@fcm.googleapis.com/a',
+    'https://fcm.googleapis.com/a#secret',
+    'javascript:alert(1)',
+    'not-url',
+  ])('rejects SSRF endpoint %s', (url) =>
+    expect(isValidPushEndpoint(url)).toBe(false),
+  );
+  it('permits exact supported public push hosts', () => {
+    expect(
+      isValidPushEndpoint(
+        'https://updates.push.services.mozilla.com/wpush/v1/a',
+      ),
+    ).toBe(true);
   });
 });

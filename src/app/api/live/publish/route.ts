@@ -1,3 +1,5 @@
+import { z } from 'zod';
+import { readJson,withApi } from '@/lib/http-security';
 /**
  * Dev/test helper to manually push an update into the live blog so we can
  * see the "new updates" badge animate without waiting for the simulator.
@@ -19,7 +21,8 @@ const TITLE_MAX = 200;
 const BODY_MAX = 2000;
 const BYLINE_MAX = 100;
 
-export async function POST(req: NextRequest) {
+async function publish(req: NextRequest) {
+  if(process.env.NODE_ENV==='production')return NextResponse.json({error:'Live simulator publishing is disabled in production; use the durable CMS.'},{status:501});
   const blocked = csrfBlock(req);
   if (blocked) return blocked;
   const guarded = devOnlyGuard(req, {
@@ -28,10 +31,7 @@ export async function POST(req: NextRequest) {
   });
   if (guarded) return guarded;
 
-  let body: any = {};
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
+  const body=await readJson(req,z.record(z.string(),z.unknown()),8192);
 
   const slug = typeof body.slug === 'string' ? body.slug : 'shutdown-deal';
   if (!isValidLiveSlug(slug)) {
@@ -59,3 +59,5 @@ export async function POST(req: NextRequest) {
   });
   return NextResponse.json({ ok: true, update: u });
 }
+
+export const POST=withApi({name:'live-publish',max:5}, publish);

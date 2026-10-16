@@ -1,3 +1,6 @@
+import { withApi,HttpError } from '@/lib/http-security';
+import { acquireConnection,clientKey } from '@/lib/rate-limit';
+import { securityLog } from '@/lib/security-log';
 /**
  * Server-Sent Events endpoint for live blogs.
  *
@@ -26,12 +29,13 @@ type Event = {
   latestTimestamp: number;
 };
 
-export async function GET(req: NextRequest) {
+async function updates(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const slug = searchParams.get('slug') || '';
   const sinceParam = searchParams.get('since');
   const poll = searchParams.get('poll') === '1';
   const since = sinceParam ? Number(sinceParam) : 0;
+  if (!Number.isFinite(since) || since < 0) throw new HttpError(400,'Invalid timestamp');
 
   // Only known live-blog slugs are served — arbitrary slugs must not create
   // store entries / simulation timers (see liveData.isValidLiveSlug).
@@ -59,18 +63,34 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  const release=await acquireConnection(clientKey(req));
+  if(!release) throw new HttpError(429,'Too many live connections');
   // SSE streaming response
   const encoder = new TextEncoder();
   let unsub: (() => void) | undefined;
   let pingTimer: ReturnType<typeof setInterval> | undefined;
   let closed = false;
+  let expiry: ReturnType<typeof setTimeout> | undefined;
+  let closeStream: (()=>void) | undefined;
+  const cleanup=()=>{
+    if(closed)return;closed=true;
+    unsub?.();if(pingTimer)clearInterval(pingTimer);if(expiry)clearTimeout(expiry);
+    req.signal.removeEventListener('abort',onAbort);
+    void release().catch(()=>securityLog('lease_cleanup_failed'));
+  };
+  const onAbort=()=>{cleanup();try{closeStream?.();}catch{/* stream already closed */}};
 
   const stream = new ReadableStream({
     start(controller) {
+      closeStream=()=>controller.close();
+      req.signal.addEventListener('abort',onAbort,{once:true});
+      if(req.signal.aborted){onAbort();return;}
+      // Hard lifetime < shared lease expiry; no unbounded sockets/timers.
+      expiry=setTimeout(onAbort,90000);
       const send = (event: Event) => {
         if (closed) return;
         const payload = `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`;
-        controller.enqueue(encoder.encode(payload));
+        try { controller.enqueue(encoder.encode(payload)); } catch { cleanup(); }
       };
 
       // Send initial sync so client catches up instantly.
@@ -94,9 +114,7 @@ export async function GET(req: NextRequest) {
       }, 15_000);
     },
     cancel() {
-      closed = true;
-      if (unsub) unsub();
-      if (pingTimer) clearInterval(pingTimer);
+      cleanup();
     },
   });
 
@@ -110,3 +128,5 @@ export async function GET(req: NextRequest) {
     },
   });
 }
+
+export const GET=withApi({name:'live-read',max:30},updates);

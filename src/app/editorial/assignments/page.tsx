@@ -7,8 +7,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function AssignmentsPage() {
   const user = await getEditorialUser();
-  const open = getAssignments('open');
-  const claimed = getAssignments('claimed');
+  const open = (await getAssignments('open'));
+  const claimed = (await getAssignments('claimed'));
   const BEATS = ['White House','Congress','Politics','Business','Markets','Tech','World','Sports','Style','Food','Climate','Investigations','Well+Being','Opinions','Photo','Video'];
 
   return (

@@ -1,3 +1,6 @@
+import { canonicalOrigin } from '@/lib/security-config';
+import { z } from 'zod';
+import { withApi,readJson } from '@/lib/http-security';
 import { NextRequest, NextResponse } from 'next/server';
 import { recordEvent } from '@/lib/analytics';
 
@@ -30,7 +33,7 @@ function cleanProps(raw: unknown): Record<string, string | number | boolean> | u
   const out: Record<string, string | number | boolean> = {};
   for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
     if (Object.keys(out).length >= PROPS_MAX_KEYS) break;
-    if (typeof k === 'string' && k.length <= 50) {
+    if (['slug','method','action','blocked','added','variant','count'].includes(k)) {
       if (typeof v === 'string' && v.length <= PROPS_VALUE_MAX) out[k] = v;
       else if (typeof v === 'number' && Number.isFinite(v)) out[k] = v;
       else if (typeof v === 'boolean') out[k] = v;
@@ -39,20 +42,21 @@ function cleanProps(raw: unknown): Record<string, string | number | boolean> | u
   return Object.keys(out).length ? out : undefined;
 }
 
-export async function POST(req: NextRequest) {
+function safeReferrer(raw:unknown):string|undefined {
+  if(typeof raw!=='string' || raw.length>REFERRER_MAX)return undefined;
+  try { const u=new URL(raw);return ['https:','http:'].includes(u.protocol)?u.origin:undefined; }catch{return undefined;}
+}
+
+async function collect(req: NextRequest) {
   const dnt = req.headers.get('dnt');
   if (dnt === '1') {
     return new NextResponse(null, { status: 204 });
   }
 
-  let body: any = {};
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: 'bad json' }, { status: 400 });
-  }
-
+  const body = await readJson(req, z.record(z.string(),z.unknown()), 8192);
   const name = (body.n || body.name || 'pageview');
   const url = body.u || body.url;
-  if (typeof name !== 'string' || name.length > NAME_MAX) {
+  if (typeof name !== 'string' || name.length > NAME_MAX || !/^[a-z][a-z0-9_]*$/.test(name)) {
     return NextResponse.json({ error: 'invalid event name' }, { status: 400 });
   }
   if (typeof url !== 'string' || !url || url.length > URL_MAX) {
@@ -65,7 +69,7 @@ export async function POST(req: NextRequest) {
     parsed = new URL(url, 'http://local');
     if (parsed.hostname && parsed.hostname !== 'local') {
       // Absolute URL — accept if it's our own origin
-      const host = req.headers.get('host');
+      const host = new URL(canonicalOrigin()).host;
       if (parsed.host !== host) {
         return NextResponse.json({ error: 'origin mismatch' }, { status: 400 });
       }
@@ -80,10 +84,10 @@ export async function POST(req: NextRequest) {
   const duration = body.d;
   const scrollDepth = body.sd;
 
-  recordEvent({
+  await recordEvent({
     name,
-    url,
-    referrer: typeof referrer === 'string' ? referrer.slice(0, REFERRER_MAX) : undefined,
+    url: parsed.pathname,
+    referrer: safeReferrer(referrer),
     screen: typeof screen === 'number' && Number.isFinite(screen) && screen >= 0 && screen <= 100_000
       ? Math.round(screen)
       : undefined,
@@ -99,3 +103,5 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ ok: true });
 }
+
+export const POST=withApi({name:'analytics-collect',max:60,csrf:true},collect);

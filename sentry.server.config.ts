@@ -1,3 +1,4 @@
+import { redactTelemetry } from './src/lib/security-log';
 // This file configures the initialization of Sentry on the server.
 // The config you add here will be used whenever the server handles a request.
 // Docs: https://docs.sentry.io/platforms/javascript/guides/nextjs/
@@ -5,6 +6,10 @@
 import * as Sentry from '@sentry/nextjs';
 
 Sentry.init({
+  sendDefaultPii: false,
+  beforeSend: (event) => redactTelemetry(event),
+  beforeSendTransaction: (event) => redactTelemetry(event),
+  beforeBreadcrumb: (breadcrumb) => redactTelemetry(breadcrumb),
   dsn: process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN,
 
   // Adjust sample rate in production to reduce cost
