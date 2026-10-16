@@ -1,14 +1,15 @@
-import { randomBytes, createHash, scryptSync, timingSafeEqual } from 'crypto';
-
-/**
- * Lightweight file-backed JSON store for the Auth demo.
- * In production this would be Postgres/Prisma/Drizzle — but for a clone we
- * use an append-only JSON file so state persists across dev reloads without
- * standing up a database. Everything runs server-side only.
- */
-
-// Keep the DB in-process memory with a simple async mutex for atomic writes.
-type DB = {
+import {
+  randomBytes,
+  createHash,
+  scrypt as nodeScrypt,
+  timingSafeEqual,
+} from 'crypto';
+import { promisify } from 'util';
+import { readDocument, mutateDocument } from './storage';
+import { signupSchema, slugSchema } from './security-input';
+import type { EditorialRole } from './editorialAuth';
+const scrypt = promisify(nodeScrypt);
+export type DB = {
   users: Array<{
     id: string;
     email: string;
@@ -17,9 +18,16 @@ type DB = {
     passwordHash?: string; // 'scrypt$N$r$p$salt$hash' (new) or legacy raw sha256 hex
     salt?: string; // legacy only — scrypt salt is embedded in passwordHash
     createdAt: string;
+    role?: 'reader' | 'author' | 'editor' | 'admin';
+    disabled?: boolean;
     newsletterPreferences: Record<string, boolean>;
   }>;
-  accounts: Array<{ id: string; userId: string; provider: string; providerAccountId: string }>;
+  accounts: Array<{
+    id: string;
+    userId: string;
+    provider: string;
+    providerAccountId: string;
+  }>;
   sessions: Record<string, { userId: string; expiresAt: string }>;
   bookmarks: Record<string, string[]>; // userId -> article slugs
   comments: Array<{
@@ -32,249 +40,186 @@ type DB = {
   }>;
 };
 
-const DB_PATH = './.demo-db.json';
-let memory: DB | null = null;
-let writeChain: Promise<void> = Promise.resolve();
-
-function empty(): DB {
+export function emptyDB(): DB {
   return { users: [], accounts: [], sessions: {}, bookmarks: {}, comments: [] };
 }
-
-async function load(): Promise<DB> {
-  if (memory) return memory;
-  try {
-    const fs = await import('fs/promises');
-    const raw = await fs.readFile(DB_PATH, 'utf8');
-    memory = JSON.parse(raw) as DB;
-  } catch {
-    memory = empty();
-  }
-  return memory;
+const load = () => readDocument('accounts', emptyDB());
+const change = <R>(run: (db: DB) => R | Promise<R>) =>
+  mutateDocument('accounts', emptyDB(), run);
+const genId = () => randomBytes(16).toString('hex');
+// CWE-916: memory-hard scrypt with random salt. Async so signup cannot block the event loop.
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString('hex');
+  const hash = (await scrypt(password, Buffer.from(salt, 'hex'), 64)) as Buffer;
+  return `scrypt$16384$8$1$${salt}$${hash.toString('hex')}`;
 }
-
-async function save() {
-  const db = await load();
-  const fs = await import('fs/promises');
-  const serialized = JSON.stringify(db, null, 2);
-  writeChain = writeChain.then(() => fs.writeFile(DB_PATH, serialized, 'utf8'));
-  await writeChain;
-}
-
-function genId(len = 16) {
-  return randomBytes(len).toString('hex');
-}
-
-/**
- * Password hashing.
- *
- * New passwords use scrypt (a memory-hard KDF) with a per-user random salt,
- * stored self-contained as `scrypt$<N>$<r>$<p>$<saltHex>$<hashHex>`.
- *
- * Legacy demo DBs stored a single-shot sha256 hex in `passwordHash` plus the
- * salt in a separate `salt` field. Those keep verifying, and are upgraded to
- * scrypt transparently on the next successful sign-in.
- */
-const SCRYPT_PARAMS = { N: 16384, r: 8, p: 1, keylen: 64 };
-
-function hashPasswordScrypt(password: string, saltHex?: string): string {
-  const salt = saltHex ? Buffer.from(saltHex, 'hex') : randomBytes(16);
-  const hash = scryptSync(password, salt, SCRYPT_PARAMS.keylen, {
-    N: SCRYPT_PARAMS.N,
-    r: SCRYPT_PARAMS.r,
-    p: SCRYPT_PARAMS.p,
-  });
-  return `scrypt$${SCRYPT_PARAMS.N}$${SCRYPT_PARAMS.r}$${SCRYPT_PARAMS.p}$${salt.toString('hex')}$${hash.toString('hex')}`;
-}
-
-function hashPasswordSha256Hex(password: string, saltHex: string): string {
-  return createHash('sha256').update(saltHex + password).digest('hex');
-}
-
-function safeEqualHex(a: string, b: string) {
-  const ba = Buffer.from(a, 'hex');
-  const bb = Buffer.from(b, 'hex');
-  if (ba.length === 0 || ba.length !== bb.length) return false;
-  return timingSafeEqual(ba, bb);
-}
-
-/**
- * Verify a password against a stored record.
- * Returns 'scrypt' | 'legacy' | null ('legacy' = verified, needs rehash).
- */
-function verifyStoredPassword(
+async function verifyStored(
   password: string,
-  user: { passwordHash?: string; salt?: string },
-): 'scrypt' | 'legacy' | null {
+  user: DB['users'][number],
+): Promise<boolean> {
   const stored = user.passwordHash || '';
+  let hash: Buffer;
+  let expected: Buffer;
   if (stored.startsWith('scrypt$')) {
-    const [, N, r, p, saltHex, hashHex] = stored.split('$');
-    if (!saltHex || !hashHex) return null;
-    const candidate = scryptSync(password, Buffer.from(saltHex, 'hex'), SCRYPT_PARAMS.keylen, {
-      N: Number(N),
-      r: Number(r),
-      p: Number(p),
-    });
-    return safeEqualHex(candidate.toString('hex'), hashHex) ? 'scrypt' : null;
-  }
-  // Legacy: raw sha256 hex + separate salt field.
-  if (stored && user.salt) {
-    return safeEqualHex(hashPasswordSha256Hex(password, user.salt), stored) ? 'legacy' : null;
-  }
-  return null;
+    const [, n, r, p, salt, hex] = stored.split('$');
+    // Never accept attacker/corruption-controlled KDF cost from storage.
+    if (
+      n !== '16384' ||
+      r !== '8' ||
+      p !== '1' ||
+      !/^[a-f0-9]{32}$/.test(salt || '') ||
+      !/^[a-f0-9]{128}$/.test(hex || '')
+    )
+      return false;
+    hash = (await scrypt(password, Buffer.from(salt, 'hex'), 64)) as Buffer;
+    expected = Buffer.from(hex, 'hex');
+  } else if (/^[a-f0-9]{64}$/.test(stored) && user.salt) {
+    hash = createHash('sha256')
+      .update(user.salt + password)
+      .digest();
+    expected = Buffer.from(stored, 'hex');
+  } else return false;
+  return hash.length === expected.length && timingSafeEqual(hash, expected);
 }
-
 export async function findUserByEmail(email: string) {
-  const db = await load();
-  return db.users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+  return (await load()).users.find(
+    (u) => u.email === email.trim().toLowerCase(),
+  );
 }
-
 export async function findUserById(id: string) {
-  const db = await load();
-  return db.users.find((u) => u.id === id);
+  return (await load()).users.find((u) => u.id === id);
 }
-
-export async function createUserWithEmail({
-  email,
-  password,
-  name,
-}: {
+export async function createUserWithEmail(input: {
   email: string;
   password?: string;
   name?: string;
 }) {
-  const db = await load();
-  const id = genId();
-  const passwordHash = password ? hashPasswordScrypt(password) : undefined;
-  const user: DB['users'][number] = {
-    id,
-    email: email.toLowerCase(),
-    name: name || email.split('@')[0],
-    createdAt: new Date().toISOString(),
-    newsletterPreferences: { 'morning-mix': true },
-    ...(passwordHash ? { passwordHash } : {}),
-  };
-  db.users.push(user);
-  await save();
-  return user;
-}
-
-export async function verifyPassword(email: string, password: string) {
-  const user = await findUserByEmail(email);
-  if (!user || !user.passwordHash) return null;
-  const result = verifyStoredPassword(password, user);
-  if (!result) return null;
-  // Transparent upgrade: legacy sha256 hashes are re-hashed with scrypt.
-  if (result === 'legacy') {
-    user.passwordHash = hashPasswordScrypt(password);
-    delete user.salt;
-    await save();
-  }
-  return user;
-}
-
-export async function createOAuthUser({
-  email,
-  name,
-  image,
-  provider,
-  providerAccountId,
-}: {
-  email: string;
-  name?: string;
-  image?: string;
-  provider: string;
-  providerAccountId: string;
-}) {
-  const db = await load();
-  let user = db.users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-  if (!user) {
-    user = {
+  const data = signupSchema.parse(input);
+  const passwordHash = await hashPassword(data.password);
+  return change((db) => {
+    if (db.users.length >= 100000) throw new Error('Account capacity reached');
+    if (db.users.some((u) => u.email === data.email))
+      throw new Error('Unable to create account');
+    const user: DB['users'][number] = {
       id: genId(),
-      email: email.toLowerCase(),
-      name: name || email.split('@')[0],
-      image,
+      email: data.email,
+      name: data.name || data.email.split('@')[0],
+      passwordHash,
+      role: 'reader',
       createdAt: new Date().toISOString(),
-      newsletterPreferences: { 'morning-mix': true },
+      newsletterPreferences: {},
     };
     db.users.push(user);
-  } else if (image && !user.image) {
-    user.image = image;
+    return user;
+  });
+}
+export async function verifyPassword(email: string, password: string) {
+  const user = await findUserByEmail(email);
+  if (
+    !user ||
+    user.disabled ||
+    password.length > 128 ||
+    !(await verifyStored(password, user))
+  )
+    return null;
+  if (!user.passwordHash?.startsWith('scrypt$')) {
+    const passwordHash = await hashPassword(password);
+    await change((db) => {
+      const u = db.users.find((u) => u.id === user.id);
+      if (u) {
+        u.passwordHash = passwordHash;
+        delete u.salt;
+      }
+    });
   }
-  if (!db.accounts.find((a) => a.provider === provider && a.providerAccountId === providerAccountId)) {
-    db.accounts.push({ id: genId(), userId: user.id, provider, providerAccountId });
-  }
-  await save();
   return user;
 }
-
+export async function getStaffIdentity(id: string) {
+  const u = await findUserById(id);
+  if (!u || u.disabled) return null;
+  return {
+    id: u.id,
+    email: u.email,
+    name: u.name || 'Staff',
+    role: (u.role || 'reader') as EditorialRole,
+  };
+}
 export async function getBookmarks(userId: string): Promise<string[]> {
-  const db = await load();
-  return db.bookmarks[userId] || [];
+  return (await load()).bookmarks[userId] || [];
 }
-
 export async function toggleBookmark(userId: string, slug: string) {
-  const db = await load();
-  const list = db.bookmarks[userId] ? [...db.bookmarks[userId]] : [];
-  const idx = list.indexOf(slug);
-  if (idx >= 0) list.splice(idx, 1);
-  else list.push(slug);
-  db.bookmarks[userId] = list;
-  await save();
-  return list;
+  slugSchema.parse(slug);
+  return change((db) => {
+    if (!db.users.some((u) => u.id === userId && !u.disabled))
+      throw new Error('Unauthorized');
+    const list = db.bookmarks[userId] || [];
+    const idx = list.indexOf(slug);
+    if (idx >= 0) list.splice(idx, 1);
+    else {
+      if (list.length >= 500) throw new Error('Bookmark quota reached');
+      list.push(slug);
+    }
+    db.bookmarks[userId] = list;
+    return list;
+  });
 }
-
-export async function setNewsletterPrefs(userId: string, prefs: Record<string, boolean>) {
-  const db = await load();
-  const user = db.users.find((u) => u.id === userId);
-  if (!user) return;
-  user.newsletterPreferences = prefs;
-  await save();
-  return prefs;
+export async function setNewsletterPrefs(
+  userId: string,
+  prefs: Record<string, boolean>,
+) {
+  return change((db) => {
+    const u = db.users.find((u) => u.id === userId && !u.disabled);
+    if (!u) throw new Error('Unauthorized');
+    u.newsletterPreferences = prefs;
+    return prefs;
+  });
 }
-
 export async function getComments(articleId: string) {
-  const db = await load();
-  return db.comments
+  return (await load()).comments
     .filter((c) => c.articleId === articleId)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 100)
+    .map(({ id, userName, body, createdAt }) => ({
+      id,
+      userName,
+      body,
+      createdAt,
+    }));
 }
-
-export async function addComment({
-  articleId,
-  userId,
-  body,
-}: {
+export async function addComment(input: {
   articleId: string;
   userId: string;
   body: string;
 }) {
-  const db = await load();
-  const user = db.users.find((u) => u.id === userId);
-  if (!user) throw new Error('User not found');
-  const comment: DB['comments'][number] = {
-    id: genId(),
-    articleId,
-    userId,
-    userName: user.name || user.email,
-    body: body.trim().slice(0, 1000),
-    createdAt: new Date().toISOString(),
-  };
-  db.comments.push(comment);
-  await save();
-  return comment;
+  return change((db) => {
+    const user = db.users.find((u) => u.id === input.userId && !u.disabled);
+    if (!user) throw new Error('Unauthorized');
+    if (db.comments.length >= 50000) throw new Error('Comment quota reached');
+    const comment = {
+      id: genId(),
+      ...input,
+      userName: user.name || 'Reader',
+      createdAt: new Date().toISOString(),
+    };
+    db.comments.push(comment);
+    const { id, userName, body, createdAt } = comment;
+    return { id, userName, body, createdAt };
+  });
 }
-
 export async function getUserProfile(userId: string) {
-  const user = await findUserById(userId);
-  if (!user) return null;
-  const { passwordHash, salt, ...safe } = user;
+  const u = await findUserById(userId);
+  if (!u || u.disabled) return null;
   return {
-    ...safe,
+    id: u.id,
+    email: u.email,
+    name: u.name,
+    image: u.image,
+    createdAt: u.createdAt,
+    newsletterPreferences: u.newsletterPreferences,
     bookmarks: await getBookmarks(userId),
   };
 }
-
-/** Test-only helper: drop the in-memory cache so the next read re-reads the file. */
+/** Legacy tests no longer need cache reset: storage reads are fresh. */
 export function _resetForTests() {
-  memory = null;
+  /* no in-process user cache */
 }

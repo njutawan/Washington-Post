@@ -15,6 +15,7 @@ const _rah = rehypeAutolinkHeadings.default || rehypeAutolinkHeadings;
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: { serverActions: { bodySizeLimit: '128kb' } },
   pageExtensions: ['ts', 'tsx', 'js', 'jsx', 'md', 'mdx'],
   images: {
     /**
@@ -47,9 +48,9 @@ const nextConfig = {
      *
      * CSP notes:
      *  - Next.js App Router inlines its RSC flight scripts, so `script-src`
-     *    must keep 'unsafe-inline' here (per-request nonces are not
-     *    supported for framework-injected scripts in Next 15). Everything
-     *    else stays strict: no remote scripts except Clerk (when configured),
+     *    currently uses 'unsafe-inline' in this static policy. A strict
+     *    per-request nonce policy needs a coordinated rendering change; this
+     *    remains a documented hardening gap. No remote scripts are allowed,
      *    no objects/plugins, self-only forms, clickjacking denied, and
      *    image/media/connect sources limited to the hosts the site actually
      *    uses (Unsplash/Picsum/LoremFlickr/Twitter/YouTube images, SoundHelix
@@ -63,20 +64,15 @@ const nextConfig = {
     };
     const productionCsp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.accounts.dev",
+      "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
-      // img.clerk.com serves user avatars; instance domains serve them too when
-      // a custom frontend API is in play. Without these the CSP silently kills
-      // every avatar in <UserButton/> / <Show when="signed-in">.
-      "img-src 'self' data: blob: https://images.unsplash.com https://picsum.photos https://loremflickr.com https://i.ytimg.com https://pbs.twimg.com https://img.clerk.com https://*.clerk.com https://*.clerk.accounts.dev",
+      "img-src 'self' data: blob: https://images.unsplash.com https://picsum.photos https://loremflickr.com https://i.ytimg.com https://pbs.twimg.com",
       "font-src 'self' data:",
       "media-src 'self' https://www.soundhelix.com",
-      // wss:// is required for Clerk's realtime session syncing — an https://
-      // source does NOT match a websocket handshake, so sessions would go stale.
-      `connect-src 'self' https://www.soundhelix.com https://*.ingest.sentry.io https://*.clerk.com https://*.clerk.accounts.dev wss://*.clerk.com wss://*.clerk.accounts.dev${
+      `connect-src 'self' https://www.soundhelix.com https://*.ingest.sentry.io${
         process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN ? ` https://${process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN}` : ''
       }`,
-      "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.youtube.com https://platform.twitter.com https://*.clerk.com https://*.clerk.accounts.dev",
+      "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.youtube.com https://platform.twitter.com",
       "worker-src 'self'",
       "object-src 'none'",
       "base-uri 'self'",
@@ -163,5 +159,5 @@ module.exports = withSentry(withMDX(nextConfig), {
   project: process.env.SENTRY_PROJECT || 'washington-post-clone',
   silent: !process.env.CI,
   widenClientFileUpload: true,
-  hideSourceMaps: true,
+  sourcemaps: { deleteSourcemapsAfterUpload: true },
 });

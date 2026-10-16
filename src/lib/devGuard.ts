@@ -22,7 +22,7 @@ export function devOnlyGuard(
   if (process.env.NODE_ENV !== 'production') return null;
 
   const expected = process.env[envVar];
-  if (!expected) {
+  if (!expected || expected.length < 32) {
     return NextResponse.json(
       { error: 'This dev/test endpoint is disabled in production.' },
       { status: 501 },

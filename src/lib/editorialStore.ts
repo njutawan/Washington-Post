@@ -1,55 +1,29 @@
-/**
- * File-backed store for editorial CMS workflows.
- *
- * We persist drafts, assignments, moderation queues and media metadata to
- * .editorial-data/*.json. Published articles live in /content/articles/*.mdx
- * (see mdx.ts) — publishing a draft from the CMS writes an MDX file.
- *
- * This is intentionally simple (single-process JSON + fs) so the CMS works
- * without spinning up Postgres/PlanetScale; swap the load/write helpers for
- * a real DB when shipping.
+/** Durable tenant-scoped CMS. Publishing stores plain text, NEVER executable MDX.
+ * CWE-22: user-controlled slugs never reach filesystem APIs. Legacy local MDX
+ * remains build-time trusted repository content only.
  */
-import fs from 'fs';
-import path from 'path';
-
-const DATA_DIR = path.join(process.cwd(), '.editorial-data');
-const ENSURED = new Set<string>();
-
-function ensure(dir: string) {
-  if (ENSURED.has(dir)) return;
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  ENSURED.add(dir);
-}
-
-function readJson<T>(file: string, fallback: T): T {
-  const p = path.join(DATA_DIR, file);
-  try {
-    if (!fs.existsSync(p)) return fallback;
-    return JSON.parse(fs.readFileSync(p, 'utf-8')) as T;
-  } catch {
-    return fallback;
-  }
-}
-function writeJson(file: string, value: unknown) {
-  ensure(DATA_DIR);
-  const p = path.join(DATA_DIR, file);
-  fs.writeFileSync(p, JSON.stringify(value, null, 2), 'utf-8');
-}
-
-export function claimAssignment(id: string, actor: { id: string; name: string }) {
-  const all = getAssignments();
-  const a = all.find((x) => x.id === id);
-  if (a && a.status === 'open') {
-    a.status = 'claimed';
-    a.reporterId = actor.id;
-    a.reporterName = actor.name;
-    writeJson('assignments.json', all);
-  }
-  return a;
-}
-
-// ---------- Types ----------
-export type StoryStatus = 'idea' | 'pitched' | 'assigned' | 'drafting' | 'editing' | 'ready' | 'published' | 'killed';
+import { randomUUID } from 'crypto';
+import { z } from 'zod';
+import { readDocument, mutateDocument } from './storage';
+import {
+  idSchema,
+  slugSchema,
+  statusSchema,
+  prioritySchema,
+  storyFormSchema,
+} from './security-input';
+import { assertActor, assertOwner, assertTransition } from './editorial-policy';
+import { HttpError } from './http-security';
+import type { Actor } from './editorialAuth';
+export type StoryStatus =
+  | 'idea'
+  | 'pitched'
+  | 'assigned'
+  | 'drafting'
+  | 'editing'
+  | 'ready'
+  | 'published'
+  | 'killed';
 
 export type Story = {
   id: string;
@@ -72,6 +46,7 @@ export type Story = {
   updatedAt: string;
   comments: number;
   bodyPreview?: string;
+  body?: string;
 };
 
 export type Comment = {
@@ -122,198 +97,279 @@ export type Alert = {
   createdBy: string;
 };
 
-// ---------- Seed initial data on first load ----------
-function seedIfEmpty() {
-  if (!fs.existsSync(path.join(DATA_DIR, 'stories.json'))) {
-    const now = new Date().toISOString();
-    const seeds: Story[] = [
-      { id: 's-001', slug: 'seed-overnight-developments', title: 'Overnight: White House signals openness to short-term CR as shutdown clock ticks', category: 'Politics', categorySlug: 'politics', kicker: 'Politics', status: 'editing', authorName: 'Paul Kane', editorName: 'National Desk', wordCount: 842, priority: 'breaking', createdAt: now, updatedAt: now, comments: 12 },
-      { id: 's-002', slug: 'seed-fed-preview', title: 'What to watch when the Fed announces its rate decision Wednesday', category: 'Business', categorySlug: 'business', kicker: 'Economy', status: 'drafting', authorName: 'Rachel Siegel', editorName: 'Business Desk', wordCount: 510, priority: 'urgent', createdAt: now, updatedAt: now, comments: 3 },
-      { id: 's-003', slug: 'seed-commanders-analysis', title: 'Analysis: How the Commanders\u2019 rebuilt offensive line is changing everything', category: 'Sports', categorySlug: 'sports', status: 'ready', authorName: 'Barry Svrluga', editorName: 'Sports Desk', wordCount: 1102, priority: 'routine', createdAt: now, updatedAt: now, comments: 28 },
-      { id: 's-004', slug: 'seed-cold-weather-hacks', title: 'Six winter hacks that actually work, according to people who live in Minnesota', category: 'Well+Being', categorySlug: 'wellbeing', kicker: 'Well+Being', status: 'pitched', authorName: 'Kelyn Soong', wordCount: 630, priority: 'routine', createdAt: now, updatedAt: now, comments: 0 },
-      { id: 's-005', slug: 'seed-opioid-settlement', title: 'States clash over how to spend $50B in opioid settlement money', category: 'Investigations', categorySlug: 'investigations', kicker: 'Investigation', status: 'assigned', authorName: 'Todd C. Frankel', editorName: 'Investigations Desk', wordCount: 320, priority: 'urgent', createdAt: now, updatedAt: now, comments: 1 },
-      { id: 's-006', slug: 'seed-film-festival-preview', title: 'The 10 most anticipated films at this year\u2019s New York Film Festival', category: 'Style', categorySlug: 'style', status: 'drafting', authorName: 'Ann Hornaday', wordCount: 740, priority: 'routine', createdAt: now, updatedAt: now, comments: 4 },
-    ];
-    writeJson('stories.json', seeds);
-  }
-  if (!fs.existsSync(path.join(DATA_DIR, 'comments.json'))) {
-    const now = new Date().toISOString();
-    writeJson('comments.json', [
-      { id: 'c-001', storySlug: 'house-passes-short-term-spending-bill', storyTitle: 'House passes short-term spending bill', authorName: 'DCReader42', body: 'This is the same kabuki we saw in March. When does it end?', createdAt: now, flagged: false, status: 'pending', reports: 0 },
-      { id: 'c-002', storySlug: 'oil-rockets-toward-100-per-barrel', storyTitle: 'Oil rockets back toward $100', authorName: 'EnergyWatcher', body: 'Drill baby drill is not an energy policy.', createdAt: now, flagged: true, status: 'pending', reports: 3 },
-      { id: 'c-003', storySlug: 'commanders-real-football', storyTitle: 'The Commanders finally look like a real football team', authorName: 'HTTC4Life', body: 'Small sample size, but I\u2019ll take it.', createdAt: now, flagged: false, status: 'pending', reports: 0 },
-      { id: 'c-004', storySlug: 'cds-are-back-baby', storyTitle: 'CDs are back, baby', authorName: 'MixTape94', body: 'Now do MiniDisc.', createdAt: now, flagged: false, status: 'approved', reports: 0 },
-    ]);
-  }
-  if (!fs.existsSync(path.join(DATA_DIR, 'media.json'))) {
-    writeJson('media.json', []);
-  }
-  if (!fs.existsSync(path.join(DATA_DIR, 'assignments.json'))) {
-    const now = new Date().toISOString();
-    writeJson('assignments.json', [
-      { id: 'a-001', beat: 'White House', summary: 'Check in with sources on whether the President will sign the CR if the Senate passes it Saturday.', createdBy: 'Politics Desk', createdAt: now, status: 'open' },
-      { id: 'a-002', beat: 'Markets', summary: 'Reax piece from the floor of the NYSE after Fed decision — need quotes from two traders.', createdBy: 'Business Desk', createdAt: now, status: 'claimed', reporterName: 'Evan Halper' },
-    ]);
-  }
-  if (!fs.existsSync(path.join(DATA_DIR, 'alerts.json'))) {
-    writeJson('alerts.json', []);
-  }
+export type EditorialState = {
+  stories: Story[];
+  comments: Comment[];
+  media: MediaItem[];
+  assignments: Assignment[];
+  alerts: Alert[];
+};
+export const emptyEditorial = (): EditorialState => ({
+  stories: [],
+  comments: [],
+  media: [],
+  assignments: [],
+  alerts: [],
+});
+const load = () => readDocument('editorial', emptyEditorial());
+function change<R>(
+  actor: Actor,
+  action: string,
+  targetId: string,
+  run: (state: EditorialState) => R,
+) {
+  assertActor(actor);
+  idSchema.parse(targetId);
+  return mutateDocument('editorial', emptyEditorial(), run, {
+    actorId: actor.id,
+    action,
+    targetId,
+  });
 }
-seedIfEmpty();
-
-// ---------- Stories ----------
-export function getStories(status?: StoryStatus): Story[] {
-  const all = readJson<Story[]>('stories.json', []);
-  if (status) return all.filter((s) => s.status === status);
-  return all;
+export async function getStories(status?: StoryStatus) {
+  const all = (await load()).stories;
+  return status ? all.filter((s) => s.status === status) : all;
 }
-export function getStoryById(id: string): Story | null {
-  return getStories().find((s) => s.id === id) || null;
+export async function getStoryById(id: string) {
+  idSchema.parse(id);
+  return (await load()).stories.find((s) => s.id === id) || null;
 }
-export function upsertStory(s: Story) {
-  const all = getStories();
-  const idx = all.findIndex((x) => x.id === s.id);
-  s.updatedAt = new Date().toISOString();
-  if (idx === -1) all.unshift(s); else all[idx] = s;
-  writeJson('stories.json', all);
+export async function getPublishedArticle(slug: string) {
+  if (!slugSchema.safeParse(slug).success) return null;
+  const s = (await load()).stories.find(
+    (s) => s.slug === slug && s.status === 'published',
+  );
+  if (!s) return null;
+  return {
+    id: s.id,
+    slug: s.slug,
+    title: s.title,
+    dek: s.dek,
+    category: s.category,
+    categorySlug: s.categorySlug,
+    kicker: s.kicker,
+    byline: 'By ' + s.authorName,
+    publishedAt: s.publishedAt,
+    time: 'Published',
+    body: (s.body || s.bodyPreview || '').split(/\n\n+/),
+  };
+}
+function storyIn(state: EditorialState, id: string) {
+  const s = state.stories.find((s) => s.id === id);
+  if (!s) throw new HttpError(404, 'Story not found');
   return s;
 }
-export function deleteStory(id: string) {
-  writeJson('stories.json', getStories().filter((s) => s.id !== id));
-}
-export function createStory(input: Partial<Story> & { title: string; category: string; categorySlug: string }, actor: { id: string; name: string }): Story {
-  const now = new Date().toISOString();
-  const slug = input.slug || input.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
-  const s: Story = {
-    id: 's-' + Math.random().toString(36).slice(2, 9),
+export async function createStory(
+  input: {
+    title: string;
+    category: string;
+    categorySlug: string;
+    dek?: string;
+    kicker?: string;
+    priority?: Story['priority'];
+  },
+  actor: Actor,
+) {
+  const id = 's-' + randomUUID();
+  const slug =
+    input.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 65)
+      .replace(/-$/, '') +
+    '-' +
+    id.slice(2, 10);
+  const data = storyFormSchema.parse({
+    ...input,
     slug,
-    title: input.title,
-    dek: input.dek,
-    kicker: input.kicker,
-    category: input.category,
-    categorySlug: input.categorySlug,
-    status: input.status || 'idea',
-    authorId: actor.id,
-    authorName: actor.name,
-    wordCount: input.wordCount || 0,
+    dek: input.dek || '',
+    kicker: input.kicker || '',
     priority: input.priority || 'routine',
-    createdAt: now,
-    updatedAt: now,
-    comments: 0,
-  };
-  return upsertStory(s);
+    body: '',
+  });
+  return change(actor, 'story.create', id, (state) => {
+    if (state.stories.length >= 10000)
+      throw new HttpError(409, 'Story quota reached');
+    const now = new Date().toISOString();
+    const s: Story = {
+      ...data,
+      id,
+      status: 'drafting',
+      authorId: actor.id,
+      authorName: actor.name,
+      wordCount: 0,
+      comments: 0,
+      createdAt: now,
+      updatedAt: now,
+    };
+    state.stories.push(s);
+    return s;
+  });
 }
-
-// ---------- Comments ----------
-export function getComments(filter?: { status?: Comment['status']; flagged?: boolean }): Comment[] {
-  let all = readJson<Comment[]>('comments.json', []);
+export async function updateStory(
+  id: string,
+  input: z.infer<typeof storyFormSchema>,
+  actor: Actor,
+) {
+  const data = storyFormSchema.parse(input);
+  prioritySchema.parse(data.priority);
+  return change(actor, 'story.update', id, (state) => {
+    const s = storyIn(state, id);
+    assertOwner(actor, s);
+    if (s.status === 'published' || s.status === 'killed')
+      throw new HttpError(409, 'Story is locked');
+    if (
+      state.stories.some((other) => other.id !== id && other.slug === data.slug)
+    )
+      throw new HttpError(409, 'Slug already in use');
+    Object.assign(s, data, {
+      bodyPreview: data.body.slice(0, 400),
+      wordCount: data.body.trim().split(/\s+/).filter(Boolean).length,
+      updatedAt: new Date().toISOString(),
+    });
+    return s;
+  });
+}
+export async function transitionStory(id: string, raw: unknown, actor: Actor) {
+  const next = statusSchema.parse(raw);
+  return change(actor, 'story.transition.' + next, id, (state) => {
+    const s = storyIn(state, id);
+    assertTransition(actor, s, next);
+    s.status = next;
+    s.updatedAt = new Date().toISOString();
+    if (next === 'editing') {
+      s.editorId = actor.id;
+      s.editorName = actor.name;
+    }
+    return s;
+  });
+}
+export async function publishStory(id: string, actor: Actor) {
+  assertActor(actor, 'editor');
+  return change(actor, 'story.publish', id, (state) => {
+    const s = storyIn(state, id);
+    slugSchema.parse(s.slug);
+    if (s.status !== 'ready') throw new HttpError(409, 'Story must be ready');
+    if (state.stories.some((other) => other.id !== id && other.slug === s.slug))
+      throw new HttpError(409, 'Slug collision');
+    s.status = 'published';
+    s.publishedAt = new Date().toISOString();
+    s.updatedAt = s.publishedAt;
+    s.editorId = actor.id;
+    s.editorName = actor.name;
+    return s;
+  });
+}
+export async function deleteStory(id: string, actor: Actor) {
+  assertActor(actor, 'admin');
+  return change(actor, 'story.delete', id, (state) => {
+    storyIn(state, id);
+    state.stories = state.stories.filter((s) => s.id !== id);
+  });
+}
+export async function getComments(filter?: {
+  status?: Comment['status'];
+  flagged?: boolean;
+}) {
+  let all = (await load()).comments;
   if (filter?.status) all = all.filter((c) => c.status === filter.status);
   if (filter?.flagged) all = all.filter((c) => c.flagged);
   return all;
 }
-export function moderateComment(id: string, status: Comment['status']) {
-  const all = readJson<Comment[]>('comments.json', []);
-  const c = all.find((x) => x.id === id);
-  if (c) { c.status = status; writeJson('comments.json', all); }
+export async function moderateComment(id: string, raw: unknown, actor: Actor) {
+  assertActor(actor, 'editor');
+  const status = z.enum(['pending', 'approved', 'rejected']).parse(raw);
+  return change(actor, 'comment.' + status, id, (state) => {
+    const c = state.comments.find((c) => c.id === id);
+    if (!c) throw new HttpError(404, 'Comment not found');
+    c.status = status;
+  });
 }
-
-// ---------- Assignments ----------
-export function getAssignments(status?: Assignment['status']): Assignment[] {
-  const all = readJson<Assignment[]>('assignments.json', []);
-  if (status) return all.filter((a) => a.status === status);
-  return all;
+export async function getAssignments(status?: Assignment['status']) {
+  const all = (await load()).assignments;
+  return status ? all.filter((a) => a.status === status) : all;
 }
-export function createAssignment(input: Partial<Assignment> & { beat: string; summary: string }, actor: { id: string; name: string }): Assignment {
-  const a: Assignment = {
-    id: 'a-' + Math.random().toString(36).slice(2, 9),
-    beat: input.beat,
-    summary: input.summary,
-    dueDate: input.dueDate,
-    createdBy: actor.name,
-    createdAt: new Date().toISOString(),
-    status: 'open',
-  };
-  const all = getAssignments();
-  all.unshift(a);
-  writeJson('assignments.json', all);
-  return a;
+export async function createAssignment(
+  input: { beat: string; summary: string; dueDate?: string },
+  actor: Actor,
+) {
+  const data = z
+    .object({
+      beat: z.string().trim().min(1).max(80),
+      summary: z.string().trim().min(1).max(2000),
+      dueDate: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional(),
+    })
+    .parse(input);
+  const id = 'a-' + randomUUID();
+  return change(actor, 'assignment.create', id, (state) => {
+    const a: Assignment = {
+      ...data,
+      id,
+      createdBy: actor.id,
+      createdAt: new Date().toISOString(),
+      status: 'open',
+    };
+    state.assignments.push(a);
+    return a;
+  });
 }
-
-// ---------- Media ----------
-export function getMedia(): MediaItem[] {
-  return readJson<MediaItem[]>('media.json', []);
+export async function claimAssignment(id: string, actor: Actor) {
+  return change(actor, 'assignment.claim', id, (state) => {
+    const a = state.assignments.find((a) => a.id === id);
+    if (!a || a.status !== 'open')
+      throw new HttpError(409, 'Assignment unavailable');
+    a.status = 'claimed';
+    a.reporterId = actor.id;
+    a.reporterName = actor.name;
+    return a;
+  });
 }
-export function addMedia(item: Omit<MediaItem, 'id' | 'uploadedAt'>): MediaItem {
-  const m: MediaItem = { ...item, id: 'm-' + Math.random().toString(36).slice(2, 9), uploadedAt: new Date().toISOString() };
-  const all = getMedia();
-  all.unshift(m);
-  writeJson('media.json', all);
-  return m;
+export async function getMedia() {
+  return (await load()).media;
 }
-
-// ---------- Alerts / Breaking news ----------
-export function getAlerts(): Alert[] {
-  return readJson<Alert[]>('alerts.json', []);
+export async function getAlerts() {
+  return (await load()).alerts;
 }
-export function upsertAlert(a: Alert) {
-  const all = getAlerts();
-  const i = all.findIndex((x) => x.id === a.id);
-  if (i === -1) all.unshift(a); else all[i] = a;
-  writeJson('alerts.json', all);
+export async function createAlert(
+  input: { kind: Alert['kind']; headline: string; body?: string },
+  actor: Actor,
+) {
+  assertActor(actor, 'editor');
+  const data = z
+    .object({
+      kind: z.enum(['breaking', 'correction', 'note']),
+      headline: z.string().trim().min(1).max(200),
+      body: z.string().max(2000).optional(),
+    })
+    .parse(input);
+  const id = 'al-' + randomUUID();
+  return change(actor, 'alert.create', id, (state) => {
+    const a: Alert = {
+      ...data,
+      id,
+      live: true,
+      createdAt: new Date().toISOString(),
+      createdBy: actor.id,
+    };
+    state.alerts.push(a);
+    return a;
+  });
 }
-export function deleteAlert(id: string) {
-  writeJson('alerts.json', getAlerts().filter((a) => a.id !== id));
+export async function toggleAlert(id: string, live: boolean, actor: Actor) {
+  assertActor(actor, 'editor');
+  return change(actor, 'alert.toggle', id, (state) => {
+    const a = state.alerts.find((a) => a.id === id);
+    if (!a) throw new HttpError(404, 'Alert not found');
+    a.live = live;
+  });
 }
-export function createAlert(input: { kind: Alert['kind']; headline: string; body?: string }, actor: { id: string; name: string }): Alert {
-  const a: Alert = {
-    id: 'al-' + Math.random().toString(36).slice(2, 9),
-    kind: input.kind,
-    headline: input.headline,
-    body: input.body,
-    live: true,
-    createdAt: new Date().toISOString(),
-    createdBy: actor.name,
-  };
-  upsertAlert(a);
-  return a;
-}
-
-// ---------- Publishing: write draft as MDX ----------
-import matter from 'gray-matter';
-
-export function publishStory(id: string, actor: { id: string; name: string }) {
-  const s = getStoryById(id);
-  if (!s) throw new Error('Story not found');
-  const articlesDir = path.join(process.cwd(), 'content', 'articles');
-  ensure(articlesDir);
-  const filePath = path.join(articlesDir, `${s.slug}.mdx`);
-  // Preserve existing body if present
-  let existingBody = '';
-  if (fs.existsSync(filePath)) {
-    try {
-      const parsed = matter(fs.readFileSync(filePath, 'utf-8'));
-      existingBody = parsed.content.trim();
-    } catch { /* ignore */ }
-  }
-  if (!existingBody) {
-    existingBody = `${s.dek || ''}\n\n_${s.kicker || s.category} —_ ${s.title.charAt(0).toLowerCase() + s.title.slice(1)}.\n\nThis story was published from the Editorial CMS.\n`;
-  }
-  const fm: Record<string, unknown> = {
-    title: s.title,
-    dek: s.dek,
-    kicker: s.kicker,
-    category: s.category,
-    categorySlug: s.categorySlug,
-    byline: s.authorName ? `By ${s.authorName}` : 'The Washington Post',
-    editor: s.editorName,
-    time: 'Just now',
-    publishedAt: new Date().toISOString(),
-  };
-  const out = matter.stringify(existingBody, fm);
-  fs.writeFileSync(filePath, out, 'utf-8');
-  s.status = 'published';
-  s.publishedAt = new Date().toISOString();
-  if (!s.editorId) { s.editorId = actor.id; s.editorName = actor.name; }
-  upsertStory(s);
-  return s;
+export async function deleteAlert(id: string, actor: Actor) {
+  assertActor(actor, 'editor');
+  return change(actor, 'alert.delete', id, (state) => {
+    state.alerts = state.alerts.filter((a) => a.id !== id);
+  });
 }

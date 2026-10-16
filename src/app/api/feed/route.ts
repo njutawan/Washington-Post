@@ -1,3 +1,4 @@
+import { withApi } from '@/lib/http-security';
 import { NextResponse } from 'next/server';
 import { getAllArticles } from '@/lib/data';
 import { absoluteUrl } from '@/lib/seo';
@@ -8,7 +9,7 @@ import { absoluteUrl } from '@/lib/seo';
 // Node's `fs`, which does not exist in the edge runtime. Running on the
 // default Node.js runtime lets this feed prerender at build time with the
 // full MDX article set instead of silently falling back to in-memory stubs.
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 export const revalidate = 600;
 
 function escapeXml(s: string) {
@@ -24,7 +25,7 @@ function escapeXml(s: string) {
   });
 }
 
-export async function GET() {
+async function feed() {
   const articles = getAllArticles().slice(0, 30);
   const now = new Date().toUTCString();
 
@@ -72,3 +73,5 @@ ${items}
     },
   });
 }
+
+export const GET=withApi({name:'rss-read',max:120,private:false},feed);

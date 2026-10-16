@@ -1,7 +1,7 @@
+import { signOut } from '@/auth';
 import Link from 'next/link';
 import { getEditorialUser } from '@/lib/getEditorialUser';
 import { ROLE_LABEL } from '@/lib/editorialAuth';
-import { SignOutButton, UserButton } from '@clerk/nextjs';
 
 const NAV: Array<{ section: string; items: Array<{ href: string; label: string; minRole: 'author' | 'editor' | 'admin' }> }> = [
   {
@@ -88,7 +88,10 @@ export default async function EditorialLayout({ children }: { children: React.Re
                 </div>
               </div>
             </div>
-            <form action="/api/auth/signout" method="post" className="text-xs">
+            <form action={async () => {
+              'use server';
+              await signOut({ redirectTo: '/' });
+            }} className="text-xs">
               <button type="submit" className="uppercase tracking-wider text-wp-gray hover:text-wp-red">Sign out</button>
             </form>
           </div>

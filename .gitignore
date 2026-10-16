@@ -18,3 +18,12 @@ nohup.out
 
 # Editorial CMS runtime data (auto-seeded)
 .editorial-data/
+
+# Security: all env/backup/runtime state stays out of source control
+.env
+.env.*
+!.env.example
+.local-data/
+.backups/
+*.backup.enc
+*.key

@@ -43,11 +43,11 @@ const TRANSITIONS: Record<string, Array<{ to: string; label: string; roles: Arra
 export default async function StoryEditor({ params }: { params: Promise<{ id: string }> }) {
   const user = await getEditorialUser();
   const { id } = await params;
-  const story = getStoryById(id);
-  if (!story) notFound();
+  const story = (await getStoryById(id));
+  if (!story || (user.role === 'author' && story.authorId !== user.id)) notFound();
 
   const transitions = (TRANSITIONS[story.status] || []).filter((t) => t.roles.includes(user.role as any));
-  const canEdit = user.role === 'admin' || user.role === 'editor' || story.authorId === user.id || !story.authorId;
+  const canEdit = user.role === 'admin' || user.role === 'editor' || story.authorId === user.id;
   const canPublish = user.role === 'editor' || user.role === 'admin';
   const canDelete = user.role === 'admin';
   const isPublished = story.status === 'published';
@@ -119,7 +119,7 @@ export default async function StoryEditor({ params }: { params: Promise<{ id: st
               <label className="block text-[10px] uppercase tracking-[0.2em] text-wp-gray font-bold mb-1">Body (Markdown)</label>
               <textarea
                 name="body"
-                defaultValue={story.bodyPreview || ''}
+                defaultValue={story.body || story.bodyPreview || ''}
                 rows={20}
                 className="w-full px-4 py-4 border border-wp-border bg-white font-mono text-sm leading-relaxed focus:outline-none focus:border-wp-black whitespace-pre-wrap"
                 placeholder="Write your story in Markdown. First paragraph will appear as the lead..."

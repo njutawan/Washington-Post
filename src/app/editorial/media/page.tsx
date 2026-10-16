@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function MediaLibrary() {
   await getEditorialUser();
-  const items = getMedia();
+  const items = (await getMedia());
   return (
     <div>
       <div className="flex items-baseline justify-between mb-4 pb-3 border-b-2 border-wp-black">

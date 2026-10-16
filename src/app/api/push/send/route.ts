@@ -1,5 +1,7 @@
+import { z } from 'zod';
+import { readJson,withApi } from '@/lib/http-security';
 import { NextRequest, NextResponse } from 'next/server';
-import { sendPush, type PushPayload } from '@/lib/push';
+import { sendPush } from '@/lib/push';
 import { devOnlyGuard } from '@/lib/devGuard';
 import { csrfBlock } from '@/lib/csrf';
 
@@ -27,11 +29,11 @@ const TOPICS = new Set(['breaking', 'politics', 'world', 'business', 'sports', '
 function cleanSameOriginPath(value: unknown, maxLen: number): string | undefined {
   if (typeof value !== 'string') return undefined;
   const v = value.trim();
-  if (!v.startsWith('/') || v.startsWith('//') || v.length > maxLen) return undefined;
+  if (!v.startsWith('/') || v.startsWith('//') || /[\\\x00-\x20]/.test(v) || v.length > maxLen) return undefined;
   return v;
 }
 
-export async function POST(req: NextRequest) {
+async function send(req: NextRequest) {
   const blocked = csrfBlock(req);
   if (blocked) return blocked;
   const guarded = devOnlyGuard(req, {
@@ -40,10 +42,7 @@ export async function POST(req: NextRequest) {
   });
   if (guarded) return guarded;
 
-  let body: Partial<PushPayload> & { title?: string; body?: string } = {};
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: 'invalid json' }, { status: 400 });
-  }
+  const body=await readJson(req,z.record(z.string(),z.unknown()),8192);
 
   const title = typeof body.title === 'string' ? body.title.trim() : '';
   const text = typeof body.body === 'string' ? body.body.trim() : '';
@@ -79,3 +78,5 @@ export async function POST(req: NextRequest) {
   });
   return NextResponse.json({ ok: true, ...result });
 }
+
+export const POST=withApi({name:'push-send',max:5}, send);

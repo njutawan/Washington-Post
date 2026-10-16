@@ -37,11 +37,11 @@ const PRIORITY_DOT: Record<string, string> = {
 
 export default async function EditorialDashboard() {
   const user = await getEditorialUser();
-  const stories = getStories();
-  const pendingComments = getComments({ status: 'pending' });
-  const flaggedComments = getComments({ flagged: true });
-  const openAssignments = getAssignments('open');
-  const liveAlerts = getAlerts().filter((a) => a.live);
+  const stories = (await getStories()).filter(s => user.role !== 'author' || s.authorId === user.id);
+  const pendingComments = (await getComments({ status: 'pending' }));
+  const flaggedComments = (await getComments({ flagged: true }));
+  const openAssignments = (await getAssignments('open'));
+  const liveAlerts = (await getAlerts()).filter((a) => a.live);
 
   // Kanban columns
   const columns: Array<{ key: keyof typeof STATUS_LABELS; label: string }> = [

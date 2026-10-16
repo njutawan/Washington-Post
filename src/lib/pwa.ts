@@ -254,7 +254,7 @@ export function usePushNotifications() {
       await fetch('/api/push/subscribe', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ endpoint: sub.endpoint }),
+        body: JSON.stringify({ endpoint: sub.endpoint, auth: sub.toJSON().keys?.auth }),
       });
       await sub.unsubscribe();
       subRef.current = null;

@@ -1,64 +1,68 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { addSubscription, removeSubscription } from '@/lib/push';
-import { csrfBlock } from '@/lib/csrf';
-
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import {
+  addSubscription,
+  removeSubscription,
+  isValidPushEndpoint,
+} from '@/lib/push';
+import { readJson, withApi, HttpError } from '@/lib/http-security';
 export const dynamic = 'force-dynamic';
-
-// The subscribe endpoint is public (any visitor's browser calls it), so all
-// fields are length-capped to keep the in-memory store bounded.
-const ENDPOINT_MAX = 2048;
-const KEY_MAX = 256;
-const TOPIC_MAX = 50;
-const TOPICS_MAX_LEN = 10;
-const UA_MAX = 256;
-
-function cleanTopics(raw: unknown): string[] | undefined {
-  if (!Array.isArray(raw)) return undefined;
-  const topics = raw
-    .filter((t): t is string => typeof t === 'string')
-    .map((t) => t.slice(0, TOPIC_MAX))
-    .filter(Boolean)
-    .slice(0, TOPICS_MAX_LEN);
-  return topics.length ? topics : undefined;
-}
-
-export async function POST(req: NextRequest) {
-  const blocked = csrfBlock(req);
-  if (blocked) return blocked;
-  let body: any = {};
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: 'invalid json' }, { status: 400 });
-  }
-  const sub = body.subscription;
-  const endpoint = sub?.endpoint;
-  const p256dh = sub?.keys?.p256dh;
-  const auth = sub?.keys?.auth;
-  if (
-    typeof endpoint !== 'string' || !endpoint || endpoint.length > ENDPOINT_MAX ||
-    typeof p256dh !== 'string' || !p256dh || p256dh.length > KEY_MAX ||
-    typeof auth !== 'string' || !auth || auth.length > KEY_MAX
-  ) {
-    return NextResponse.json({ error: 'invalid push subscription' }, { status: 400 });
-  }
-  const ok = addSubscription(
-    { endpoint, keys: { p256dh, auth } } as any,
-    {
-      topics: cleanTopics(body.topics),
-      userAgent: (req.headers.get('user-agent') || '').slice(0, UA_MAX) || undefined,
-    },
-  );
-  return NextResponse.json({ ok, count: ok ? 1 : 0 });
-}
-
-export async function DELETE(req: NextRequest) {
-  const blocked = csrfBlock(req);
-  if (blocked) return blocked;
-  let body: any = {};
-  try { body = await req.json(); } catch {}
-  const endpoint = body?.endpoint || body?.subscription?.endpoint;
-  if (typeof endpoint !== 'string' || !endpoint) {
-    return NextResponse.json({ error: 'endpoint required' }, { status: 400 });
-  }
-  removeSubscription(endpoint);
-  return NextResponse.json({ ok: true });
-}
+const key = (bytes: number) =>
+  z
+    .string()
+    .regex(/^[A-Za-z0-9_-]+$/)
+    .max(256)
+    .refine((v) => Buffer.from(v, 'base64url').length === bytes);
+const endpoint = z.string().max(2048).refine(isValidPushEndpoint);
+const topics = z
+  .array(
+    z.enum([
+      'breaking',
+      'politics',
+      'world',
+      'business',
+      'sports',
+      'entertainment',
+      'tech',
+    ]),
+  )
+  .max(7)
+  .optional();
+export const POST = withApi(
+  { name: 'push-subscribe', max: 10 },
+  async (req: Request) => {
+    const data = await readJson(
+      req,
+      z
+        .object({
+          subscription: z
+            .object({
+              endpoint,
+              expirationTime: z.number().nullable().optional(),
+              keys: z.object({ p256dh: key(65), auth: key(16) }).strict(),
+            })
+            .strict(),
+          topics,
+        })
+        .strict(),
+      4096,
+    );
+    const ok = await addSubscription(data.subscription, {
+      topics: data.topics,
+    });
+    if (!ok) throw new HttpError(409, 'Subscription unavailable');
+    return NextResponse.json({ ok: true });
+  },
+);
+export const DELETE = withApi(
+  { name: 'push-unsubscribe', max: 10 },
+  async (req: Request) => {
+    const data = await readJson(
+      req,
+      z.object({ endpoint, auth: key(16) }).strict(),
+      4096,
+    );
+    await removeSubscription(data.endpoint, data.auth);
+    return NextResponse.json({ ok: true });
+  },
+);

@@ -1,7 +1,7 @@
+import { safeJsonLd } from '@/lib/security-json';
 import type { Viewport } from 'next';
 import './globals.css';
 import './view-transitions.css';
-import { ClerkProvider } from '@clerk/nextjs';
 import { auth as nextAuth } from '@/auth';
 import { PaywallProvider } from '@/lib/usePaywall';
 import { siteMetadata, organizationJsonLd, websiteJsonLd } from '@/lib/seo';
@@ -29,11 +29,6 @@ export const viewport: Viewport = {
   themeColor: '#121212',
 };
 
-const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-const ClerkWrap: React.FC<{ children: React.ReactNode }> = clerkKey
-  ? ({ children }) => <ClerkProvider afterSignOutUrl="/">{children}</ClerkProvider>
-  : ({ children }) => <>{children}</>;
-
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await nextAuth();
   return (
@@ -56,19 +51,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLd()) }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd()) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteJsonLd()) }}
         />
         <link rel="alternate" type="application/rss+xml" title="The Washington Post — RSS Feed" href="/api/feed" />
       </head>
       <body className="antialiased pt-1 pb-16 md:pb-14">
-        {/* ClerkProvider must live INSIDE <body>, not wrap <html> — Clerk mounts
-            its client SDK against the app tree, and wrapping the document element
-            breaks hydration of <head>-level metadata. */}
-        <ClerkWrap>
         <SessionProvider session={session}>
           <PaywallProvider>
             <PodcastProvider>
@@ -82,7 +73,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </PodcastProvider>
           </PaywallProvider>
         </SessionProvider>
-        </ClerkWrap>
         <TopLoader />
         <RouteLoadingBar />
         <PageTransitions />

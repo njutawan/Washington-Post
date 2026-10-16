@@ -1,45 +1,38 @@
-import { describe, expect, it } from 'vitest';
-import { csrfBlock, isCrossOriginMutation } from '@/lib/csrf';
-
-// NOTE: `new Request(url, { headers })` silently drops forbidden headers
-// (Origin, Sec-*, Host), so tests use a minimal { headers } stub instead —
-// the guard only reads req.headers.
-function post(headers: Record<string, string> = {}) {
-  return { headers: new Headers({ host: 'localhost:3000', ...headers }) } as unknown as Request;
-}
-
-describe('CSRF origin guard', () => {
-  it('allows requests without Origin (curl, native apps, navigations)', () => {
-    expect(isCrossOriginMutation(post())).toBe(false);
-    expect(csrfBlock(post())).toBeNull();
+// @vitest-environment node
+import { describe, it, expect } from 'vitest';
+import { isCrossOriginMutation, csrfBlock } from '@/lib/csrf';
+const request = (headers: Record<string, string | undefined>) =>
+  new Request('http://localhost:3000/api/demo', {
+    method: 'POST',
+    headers: Object.fromEntries(
+      Object.entries(headers).filter(
+        (e): e is [string, string] => typeof e[1] === 'string',
+      ),
+    ),
   });
-
-  it('allows same-origin browser requests', () => {
-    const req = post({ origin: 'http://localhost:3000', 'sec-fetch-site': 'same-origin' });
-    expect(isCrossOriginMutation(req)).toBe(false);
+describe('canonical origin CSRF', () => {
+  it.each([
+    {},
+    { origin: 'https://evil.example' },
+    { origin: 'null' },
+    { origin: 'not-url' },
+    { origin: 'https://localhost:3000' },
+    { origin: 'http://localhost:3000/' },
+    { origin: 'http://localhost:3000', 'sec-fetch-site': 'cross-site' },
+  ])('rejects missing/invalid/cross origin %j', (headers) => {
+    expect(isCrossOriginMutation(request(headers))).toBe(true);
+    expect(csrfBlock(request(headers))?.status).toBe(403);
   });
-
-  it('blocks cross-origin Origin header', () => {
-    const req = post({ origin: 'https://evil.example' });
-    expect(isCrossOriginMutation(req)).toBe(true);
-    const res = csrfBlock(req)!;
-    expect(res.status).toBe(403);
-  });
-
-  it('blocks subdomain spoofing (exact host match required)', () => {
-    expect(isCrossOriginMutation(post({ origin: 'http://evil.localhost:3000' }))).toBe(true);
-    expect(isCrossOriginMutation(post({ origin: 'http://localhost:3000.evil.example' }))).toBe(true);
-  });
-
-  it('blocks Sec-Fetch-Site: cross-site even without Origin', () => {
-    expect(isCrossOriginMutation(post({ 'sec-fetch-site': 'cross-site' }))).toBe(true);
-  });
-
-  it('blocks malformed Origin', () => {
-    expect(isCrossOriginMutation(post({ origin: 'not-a-url' }))).toBe(true);
-  });
-
-  it('is case-insensitive on host comparison', () => {
-    expect(isCrossOriginMutation(post({ origin: 'HTTP://LOCALHOST:3000' }))).toBe(false);
-  });
+  it('allows exact canonical origin only', () =>
+    expect(csrfBlock(request({ origin: 'http://localhost:3000' }))).toBeNull());
+  it('does not trust manipulated Host or Forwarded-Host', () =>
+    expect(
+      isCrossOriginMutation(
+        request({
+          host: 'evil.example',
+          'x-forwarded-host': 'evil.example',
+          origin: 'http://evil.example',
+        }),
+      ),
+    ).toBe(true));
 });

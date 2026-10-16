@@ -1,3 +1,12 @@
+> **Security/runtime update (2026-10-15):** Production now requires PostgreSQL,
+> a canonical HTTPS `NEXTAUTH_URL`, a stable secret, and one server-owned
+> `APP_TENANT_ID`. NextAuth credentials is the only auth model; Clerk/OAuth
+> fallback and runtime MDX publishing were removed. Older demo/deploy instructions
+> below are superseded by [the security deployment runbook](docs/security-deployment.md).
+> Run `npm run db:migrate`, configure least-privilege roles and backups, then
+> `npm run security:preflight` before serving. `npm run test:security -- --http`
+> verifies the production build against an isolated real PostgreSQL database.
+
 <div align="center">
 
 # 📰 The Washington Post — Clone

@@ -57,7 +57,7 @@ const newsletters: Newsletter[] = [
 
 export default function NewslettersPage() {
   const { data: session, status } = useSession();
-  const [subscribed, setSubscribed] = useState<Record<string, boolean>>({ 'morning-mix': true });
+  const [subscribed, setSubscribed] = useState<Record<string, boolean>>({});
   const [email, setEmail] = useState('');
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
   const [activeCat, setActiveCat] = useState<string>('All');
@@ -77,24 +77,15 @@ export default function NewslettersPage() {
     }
   }, [status, session]);
 
-  const toggle = (id: string) => {
-    setSubscribed((s) => {
-      const next = { ...s, [id]: !s[id] };
-      if (status === 'authenticated') {
-        setSavedMsg(null);
-        fetch('/api/newsletters', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ preferences: next }),
-        }).then(() => {
-          setSavedMsg('Preferences saved to your account.');
-          setTimeout(() => setSavedMsg(null), 2500);
-        });
-      } else {
-        showToast(next[id] ? 'Added to your selections' : 'Removed from your selections');
-      }
-      return next;
-    });
+  const toggle = async (id: string) => {
+    if(status !== 'authenticated') { showToast('Sign in to manage newsletter preferences');return; }
+    const next={...subscribed,[id]:!subscribed[id]};
+    setSavedMsg(null);
+    try {
+      const res=await fetch('/api/newsletters',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({preferences:next})});
+      if(!res.ok)throw new Error('Not saved');
+      setSubscribed(next);setSavedMsg('Preferences saved. Email delivery is not enabled yet.');
+    }catch{setSavedMsg('Unable to save preferences. Please try again later.');}
   };
 
   const subscribedCount = Object.values(subscribed).filter(Boolean).length;
@@ -120,7 +111,7 @@ export default function NewslettersPage() {
           ) : (
             <p className="byline mt-3">
               <Link href="/signin?callbackUrl=/newsletters" className="text-wp-link underline font-bold">Sign in</Link>{' '}
-              to sync your newsletters across devices.
+              to manage preferences. Email delivery is disabled pending verified opt-in.
             </p>
           )}
         </div>

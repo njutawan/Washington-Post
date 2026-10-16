@@ -7,13 +7,15 @@ opencode, Windsurf, dsb.) yang bekerja di repository ini.
 
 Washington Post clone — Next.js 15 (App Router) + React 18 + TypeScript strict,
 Tailwind CSS 3, MDX (konten artikel di `content/articles/`), NextAuth v5 beta
-(credentials + OAuth opsional), Sentry, Vitest, Playwright, Storybook.
+(credentials only, server-owned tenant/DB roles), PostgreSQL production storage,
+Sentry, Vitest, Playwright, Storybook. Lihat docs/security-deployment.md sebelum deploy.
 
 ## Perintah penting
 
 ```bash
 npm run build     # validasi WAJIB setelah setiap perubahan (harus 0 error/warning)
 npm test          # unit tests (Vitest)
+npm run test:security -- --http  # PostgreSQL integration + encrypted restore + real production HTTP (build first)
 npm run lint      # ESLint
 npx tsc --noEmit  # type check strict
 npm run dev       # dev server

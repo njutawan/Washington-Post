@@ -1,10 +1,11 @@
+import { withApi } from '@/lib/http-security';
 import { NextResponse } from 'next/server';
 import { getAuthorBySlug, getArticlesByAuthor } from '@/lib/data';
 import { absoluteUrl } from '@/lib/seo';
 
 // No edge runtime: force-static is ignored on edge and getArticlesByAuthor
 // needs Node `fs` to include MDX articles (see src/app/api/feed/route.ts).
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 export const revalidate = 600;
 
 function escapeXml(s: string) {
@@ -20,7 +21,7 @@ function escapeXml(s: string) {
   });
 }
 
-export async function GET(_: Request, { params }: { params: Promise<{ slug: string }> }) {
+async function feed(_: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const author = getAuthorBySlug(slug);
   const articles = getArticlesByAuthor(slug).slice(0, 25);
@@ -75,3 +76,5 @@ ${items}
 }
 
 function SITE_NAME() { return 'The Washington Post'; }
+
+export const GET=withApi({name:'rss-read',max:120,private:false},feed);

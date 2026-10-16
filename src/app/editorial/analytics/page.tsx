@@ -6,8 +6,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function NewsroomAnalytics() {
   await getEditorialUser('editor');
-  const stories = getStories().filter((s) => s.status === 'published').slice(0, 10);
-  const pending = getComments({ status: 'pending' });
+  const stories = (await getStories()).filter((s) => s.status === 'published').slice(0, 10);
+  const pending = (await getComments({ status: 'pending' }));
   // Build deterministic-ish fake traffic numbers from slug hash
   function num(slug: string) {
     let h = 0;

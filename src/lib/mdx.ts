@@ -1,3 +1,4 @@
+import { securityLog } from './security-log';
 /**
  * MDX article loader (Task 25).
  *
@@ -114,18 +115,18 @@ async function loadMdxModule(slug: string): Promise<MdxSource | null> {
     }).context('/content/articles', false, /\.mdx$/);
     const key = ctx.keys().find((k) => k.replace('./', '').replace(/\.mdx$/, '') === slug);
     if (!key) {
-      console.error('[mdx] no MDX file matched slug=', slug, 'keys=', ctx.keys());
+      securityLog('mdx_failed');
       return null;
     }
     const mod = ctx(key);
     if (!mod || typeof mod.default !== 'function') {
-      console.error('[mdx] loaded module has no default export for slug=', slug, 'key=', key, mod);
+      securityLog('mdx_failed');
       return null;
     }
     moduleCache.set(slug, mod);
     return mod;
   } catch (err) {
-    console.error('[mdx] failed to import MDX for slug=', slug, err);
+    securityLog('mdx_failed');
     return null;
   }
 }
